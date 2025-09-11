@@ -39,3 +39,9 @@ pids
 # Temporary folders
 tmp/
 temp/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

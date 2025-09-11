@@ -12,6 +12,11 @@ const multer = require('multer');
 const dns = require('dns').promises; // <-- Importar dns/promises
 const fs = require('fs');
 
+// Cargar variables de entorno si existe .env
+if (fs.existsSync('.env')) {
+  require('dotenv').config();
+}
+
 const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
@@ -21,10 +26,7 @@ const client = new Client({
   connectionString:
     process.env.DATABASE_URL ||
     'postgres://postgres:S5QL0V126c4WMtKImkm3QTUjFKq83Tizb3BENmZAayBut2tDD9TIsgMT5fNInQv5@f8skogkc4wos8o8ccs444cks:5432/postgres',
-  ssl:
-    process.env.NODE_ENV === 'production'
-      ? { rejectUnauthorized: false }
-      : false,
+  ssl: false, // Deshabilitamos SSL ya que el servidor no lo soporta
 });
 
 // Función para crear tablas si no existen
@@ -157,20 +159,30 @@ async function crearTablasInicial() {
   }
 }
 
-client
-  .connect()
-  .then(() => {
-    console.log('Conectado a PostgreSQL');
-    return client.query('SELECT 1');
-  })
-  .then(() => {
-    console.log('Conexión verificada');
-    return crearTablasInicial();
-  })
-  .catch((err) => {
-    console.error('Error de conexión a PostgreSQL:', err);
-    process.exit(1); // Salir si no se puede conectar
-  });
+// Inicializar conexión a base de datos
+async function inicializarBaseDatos() {
+  try {
+    await client.connect();
+    console.log('✅ Conectado a PostgreSQL');
+
+    // Verificar conexión
+    await client.query('SELECT 1');
+    console.log('✅ Conexión verificada');
+
+    // Crear tablas si es necesario
+    await crearTablasInicial();
+    console.log('✅ Base de datos inicializada correctamente');
+  } catch (error) {
+    console.error('❌ Error de conexión a PostgreSQL:', error.message);
+    console.log(
+      '⚠️  La aplicación continuará pero sin funcionalidad de base de datos'
+    );
+    console.log('⚠️  Verifica la configuración de DATABASE_URL');
+  }
+}
+
+// Inicializar base de datos
+inicializarBaseDatos();
 
 // Middleware
 app.use(cors());
@@ -202,9 +214,14 @@ async function validarCorreoMX(correo) {
 // Configuración de sesión
 app.use(
   session({
-    secret: 'mi_secreto_seguro',
+    secret: process.env.SESSION_SECRET || 'mi_secreto_seguro_para_produccion',
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false, // Cambio a false para mejor seguridad
+    cookie: {
+      secure: process.env.NODE_ENV === 'production', // Solo HTTPS en producción
+      httpOnly: true, // Previene acceso desde JavaScript
+      maxAge: 24 * 60 * 60 * 1000, // 24 horas
+    },
   })
 );
 

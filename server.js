@@ -2,7 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const session = require('express-session');
 const { Client } = require('pg');
 const moment = require('moment');
@@ -393,12 +393,10 @@ app.post('/agendar-cita-modal', async (req, res) => {
   const usuario = req.session.user;
 
   if (!usuario) {
-    return res
-      .status(401)
-      .json({
-        success: false,
-        message: 'Debes iniciar sesión para agendar una cita.',
-      });
+    return res.status(401).json({
+      success: false,
+      message: 'Debes iniciar sesión para agendar una cita.',
+    });
   }
 
   try {
@@ -425,12 +423,10 @@ app.post('/agendar-cita-modal', async (req, res) => {
     const fechaHoraSeleccionada = new Date(`${fecha}T${horaValida}`);
 
     if (fechaHoraSeleccionada < ahora) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: 'No puedes agendar una cita en el pasado.',
-        });
+      return res.status(400).json({
+        success: false,
+        message: 'No puedes agendar una cita en el pasado.',
+      });
     }
 
     // Verificar si ya hay una cita en esa fecha y hora
@@ -3140,12 +3136,9 @@ app.post('/admin/citas/agregar', async (req, res) => {
     const count = parseInt(checkResult.rows[0].count);
 
     if (count > 0) {
-      return res
-        .status(400)
-        .json({
-          error:
-            'Ya existe una cita agendada a esa fecha, hora y especialidad.',
-        });
+      return res.status(400).json({
+        error: 'Ya existe una cita agendada a esa fecha, hora y especialidad.',
+      });
     }
 
     // Insertar la nueva cita en la base de datos, incluyendo tipo_documento
@@ -3268,12 +3261,10 @@ app.get('/admin/buscar-usuario', async (req, res) => {
 
   // Verifica si se recibió el tipo de documento y el número de documento
   if (!documento || !tipoDocumento) {
-    return res
-      .status(400)
-      .json({
-        success: false,
-        message: 'Tipo de documento y número son obligatorios.',
-      });
+    return res.status(400).json({
+      success: false,
+      message: 'Tipo de documento y número son obligatorios.',
+    });
   }
 
   try {
@@ -3353,12 +3344,9 @@ app.post('/admin/citas/agregar', async (req, res) => {
     const count = parseInt(checkResult.rows[0].count);
 
     if (count > 0) {
-      return res
-        .status(400)
-        .json({
-          error:
-            'Ya existe una cita agendada a esa fecha, hora y especialidad.',
-        });
+      return res.status(400).json({
+        error: 'Ya existe una cita agendada a esa fecha, hora y especialidad.',
+      });
     }
 
     // Insertar la nueva cita en la base de datos, incluyendo tipo_documento

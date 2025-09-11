@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Citas Agendadas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css" rel="stylesheet" />
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        
+        .section-title {
+            color: #0d6efd;
+        }
+        
+        .card {
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .table thead {
+            background-color: #0d6efd;
+            color: white;
+        }
+        
+        .btn-icon {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <%- include('adminHOMEheader') %>
+
+        <div class="container my-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="section-title">📅 Citas Agendadas</h2>
+                <a href="/admin-home" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left-circle"></i> Volver
+                </a>
+            </div>
+
+            <div class="card p-4 mb-4">
+                <div class="d-md-flex justify-content-between align-items-center mb-3 gap-3">
+                    <input type="text" class="form-control mb-2 mb-md-0" id="inputBusqueda" placeholder="🔎 Buscar por Cédula o Nombre" />
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalAgregarCita">
+          <i class="bi bi-calendar-plus"></i> Agendar Nueva Cita
+        </button>
+                </div>
+
+                <% if (citas.length === 0) { %>
+                    <div class="alert alert-info text-center">No hay citas agendadas.</div>
+                    <% } else { %>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>N.U.I/PAS</th>
+                                        <th>Nombre</th>
+                                        <th>Fecha</th>
+                                        <th>Hora</th>
+                                        <th>Especialidad</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaCitas">
+                                    <% citas.forEach(cita => { %>
+                                        <tr>
+                                            <td>
+                                                <%= cita.cedula %>
+                                            </td>
+                                            <td>
+                                                <%= cita.nombre %>
+                                            </td>
+                                            <td>
+                                                <%= new Date(cita.fecha).toLocaleDateString() %>
+                                            </td>
+                                            <td>
+                                                <%= cita.hora.slice(0, 5) %>
+                                            </td>
+                                            <td>
+                                                <%= cita.especialidad %>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group" role="group">
+                                                    <a href="/admin/citas/editar/<%= cita.id %>" class="btn btn-outline-secondary btn-sm btn-icon">
+                                                        <i class="bi bi-pencil-square"></i> Editar
+                                                    </a>
+                                                    <button type="button" class="btn btn-outline-danger btn-sm btn-icon btn-eliminar" data-bs-toggle="modal" data-bs-target="#modalEliminarCita" data-id="<%= cita.id %>">
+                        <i class="bi bi-trash"></i> Eliminar
+                      </button>
+                                                    <a href="/admin/historial-clinico/<%= cita.usuario_id %>" class="btn btn-outline-info btn-sm btn-icon">
+                                                        <i class="bi bi-file-earmark-text"></i> Crear HC
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <% }) %>
+                                </tbody>
+                            </table>
+                        </div>
+                        <% } %>
+            </div>
+        </div>
+        <!-- MODAL AGREGAR CITA -->
+        <div class="modal fade" id="modalAgregarCita" tabindex="-1" aria-labelledby="modalAgregarCitaLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <form class="modal-content" id="formAgregarCita" novalidate>
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="modalAgregarCitaLabel"><i class="bi bi-calendar-plus"></i> Agendar Nueva Cita</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="tipo_documento" class="form-label">Tipo de Documento</label>
+                            <select class="form-select" id="tipo_documento" name="tipo_documento" required>
+                            <option value="">Seleccione tipo</option>
+                            <option value="cedula">Cédula</option>
+                            <option value="pasaporte">Pasaporte</option>
+                        </select>
+                        </div>
+
+                        <div class="mb-3 input-group">
+                            <input type="text" class="form-control" id="inputNumeroDocumento" name="cedula" placeholder="Ingrese número" required />
+                            <button type="button" class="btn btn-outline-secondary" id="btnBuscarDocumento" title="Buscar paciente">
+                            <i class="bi bi-search"></i>
+                        </button>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="inputUsuarioId" class="form-label">ID Usuario</label>
+                            <input type="text" class="form-control" id="inputUsuarioId" name="usuario_id" readonly required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="inputNombre" class="form-label">Nombre del Paciente</label>
+                            <input type="text" class="form-control" id="inputNombre" name="nombre" readonly required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="inputFecha" class="form-label">Fecha</label>
+                            <input type="date" class="form-control" id="inputFecha" name="fecha" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="inputHora" class="form-label">Hora</label>
+                            <input type="time" class="form-control" id="inputHora" name="hora" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="inputEspecialidad" class="form-label">Especialidad</label>
+                            <select class="form-select" id="inputEspecialidad" name="especialidad" required>
+                            <option value="">Seleccione el servicio</option>
+                            <option value="Odontología General">Odontología General</option>
+                            <option value="Ortodoncia">Ortodoncia</option>
+                            <option value="Cirugía de tercer molares">Cirugía de tercer molares</option>
+                            <option value="Restauración Estética">Restauración Estética</option>
+                            <option value="Odontopediatría">Odontopediatría</option>
+                            <option value="Exodoncia">Exodoncia</option>
+                            <option value="Endodoncia">Endodoncia</option>
+                            <option value="Profilaxis">Profilaxis</option>
+                            <option value="Aclaramiento Dental">Aclaramiento Dental</option>
+                            <option value="Prótesis fijas y removibles">Prótesis fijas y removibles</option>
+                        </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Guardar Cita</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL ELIMINAR CITA -->
+        <div class="modal fade" id="modalEliminarCita" tabindex="-1" aria-labelledby="modalEliminarCitaLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <form action="/admin/citas/eliminar" method="POST" class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title" id="modalEliminarCitaLabel">Confirmar Eliminación</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>¿Estás seguro de que deseas eliminar esta cita?</p>
+                        <input type="hidden" name="id" id="citaIdEliminar">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            document.getElementById("btnBuscarDocumento").addEventListener("click", async function() {
+                const tipoDocumento = document.getElementById("tipo_documento").value;
+                const numeroDocumento = document.getElementById("inputNumeroDocumento").value.trim();
+
+                if (!tipoDocumento || !numeroDocumento) {
+                    return alert("Ingrese tipo de documento y número.");
+                }
+
+                try {
+                    const res = await fetch(`/admin/buscar-usuario?documento=${encodeURIComponent(numeroDocumento)}&tipoDocumento=${encodeURIComponent(tipoDocumento)}`);
+                    const data = await res.json();
+
+                    if (data.success) {
+                        document.getElementById("inputUsuarioId").value = data.usuario.id;
+                        document.getElementById("inputNombre").value = data.usuario.nombre;
+                    } else {
+                        alert(data.message || "Usuario no encontrado.");
+                        document.getElementById("inputUsuarioId").value = "";
+                        document.getElementById("inputNombre").value = "";
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert("Error al buscar usuario.");
+                }
+            });
+
+            document.getElementById("formAgregarCita").addEventListener("submit", async function(e) {
+                e.preventDefault();
+
+                const datos = {
+                    usuario_id: document.getElementById("inputUsuarioId").value,
+                    tipo_documento: document.getElementById("tipo_documento").value,
+                    cedula: document.getElementById("inputNumeroDocumento").value,
+                    nombre: document.getElementById("inputNombre").value,
+                    fecha: document.getElementById("inputFecha").value,
+                    hora: document.getElementById("inputHora").value,
+                    especialidad: document.getElementById("inputEspecialidad").value
+                };
+
+                for (const [clave, valor] of Object.entries(datos)) {
+                    if (!valor) {
+                        alert(`❌ El campo '${clave}' está vacío.`);
+                        return;
+                    }
+                }
+
+                try {
+                    const res = await fetch('/admin/citas/agregar', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(datos)
+                    });
+
+                    const result = await res.json();
+                    if (result.success) {
+                        alert("✅ " + result.success);
+                        location.reload();
+                    } else {
+                        alert("❌ " + (result.error || "Error al guardar la cita."));
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert("❌ Error en la solicitud.");
+                }
+            });
+
+            var modalEliminar = document.getElementById('modalEliminarCita');
+            modalEliminar.addEventListener('show.bs.modal', function(event) {
+                var button = event.relatedTarget;
+                var citaId = button.getAttribute('data-id');
+                document.getElementById('citaIdEliminar').value = citaId;
+            });
+
+            document.addEventListener("DOMContentLoaded", function() {
+                const inputBusqueda = document.getElementById('inputBusqueda');
+                const tabla = document.getElementById('tablaCitas');
+
+                inputBusqueda.addEventListener('keyup', function() {
+                    const filtro = this.value.toLowerCase().trim();
+                    const filas = tabla.getElementsByTagName('tr');
+
+                    let resultados = 0;
+                    for (let i = 0; i < filas.length; i++) {
+                        const celdas = filas[i].getElementsByTagName('td');
+                        const cedula = celdas[0] ? celdas[0].textContent.toLowerCase() : '';
+                        const nombre = celdas[1] ? celdas[1].textContent.toLowerCase() : '';
+
+
+                        if (cedula.includes(filtro) || nombre.includes(filtro)) {
+                            filas[i].style.display = '';
+                            resultados++;
+                        } else {
+                            filas[i].style.display = 'none';
+                        }
+                    }
+                });
+            });
+        </script>
+</body>
+
+</html>

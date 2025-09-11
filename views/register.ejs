@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Crear cuenta - Dra. Josseline Delgado</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" />
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f1f1f1;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .register-container {
+            max-width: 1000px;
+            margin: 50px auto;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-wrap: wrap;
+        }
+        
+        .register-left,
+        .register-right {
+            flex: 1 1 50%;
+            min-height: 500px;
+        }
+        
+        .register-left {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            background-color: #dfdddd;
+        }
+        
+        .register-box {
+            width: 100%;
+            max-width: 420px;
+        }
+        
+        .register-box h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 700;
+            color: #0d6efd;
+        }
+        
+        .form-control,
+        .form-select {
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 15px;
+        }
+        
+        .btn-primary {
+            background-color: #0d6efd;
+            border: none;
+            font-weight: 600;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        
+        .text-sm {
+            font-size: 14px;
+        }
+        
+        .links {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .links a {
+            text-decoration: none;
+            color: #0d6efd;
+            font-weight: 500;
+        }
+        
+        .alert {
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .register-right {
+            background-image: url('/images/fondo_suave.jpg');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 40px;
+            color: white;
+        }
+        
+        .register-right::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.4);
+            z-index: 1;
+        }
+        
+        .register-right-content {
+            z-index: 2;
+            text-align: center;
+            max-width: 80%;
+        }
+        
+        .register-right-content h1 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .register-right-content p {
+            font-size: 1.2rem;
+        }
+        
+        @media (max-width: 768px) {
+            .register-container {
+                flex-direction: column;
+            }
+            .register-left,
+            .register-right {
+                flex: 1 1 100%;
+            }
+            .register-right {
+                height: 250px;
+            }
+            .register-right-content h1 {
+                font-size: 1.8rem;
+            }
+            .register-right-content p {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <%- include('nav') %>
+
+        <div class="register-container">
+            <!-- Lado izquierdo: Formulario -->
+            <div class="register-left">
+                <div class="register-box">
+                    <h2>Crear una cuenta</h2>
+
+                    <% if (error) { %>
+                        <div class="alert alert-danger">
+                            <%= error %>
+                        </div>
+                        <% } %>
+                            <% if (success) { %>
+                                <div class="alert alert-success">
+                                    <%= success %>
+                                </div>
+                                <% } %>
+
+                                    <form method="POST" action="/register">
+                                        <!-- Tipo de ID + Número -->
+                                        <div class="row g-2 mb-3">
+                                            <div class="col-5">
+                                                <label for="tipo_id" class="form-label">Tipo ID</label>
+                                                <select class="form-select form-select-sm" id="tipo_id" name="tipo_id" required>
+                <option value="">Seleccione</option>
+                <option value="nacional">Cédula</option>
+                <option value="extranjero">Pasaporte</option>
+              </select>
+                                            </div>
+                                            <div class="col-7">
+                                                <label for="cedula" class="form-label" id="label_cedula">Número</label>
+                                                <input type="text" class="form-control form-control-sm" id="cedula" name="cedula" required placeholder="Ingrese su identificación" />
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="nombre" class="form-label">Nombre completo</label>
+                                            <input type="text" class="form-control" id="nombre" name="nombre" required placeholder="Ingresa tu nombre" />
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="correo" class="form-label">Correo electrónico</label>
+                                            <input type="email" class="form-control" id="correo" name="correo" required placeholder="Ingresa un correo electrónico" />
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="password" class="form-label">Contraseña</label>
+                                            <input type="password" class="form-control" id="password" name="password" required placeholder="Ingresa una contraseña" />
+                                        </div>
+
+                                        <div class="d-grid gap-2">
+                                            <button type="submit" class="btn btn-primary">Crear cuenta</button>
+                                        </div>
+                                    </form>
+
+                                    <div class="links">
+                                        <a href="/login">¿Ya tienes una cuenta? Inicia sesión</a>
+                                    </div>
+                </div>
+            </div>
+
+            <!-- Lado derecho: Imagen ilustrativa -->
+            <div class="register-right">
+                <div class="register-right-content">
+                    <h1>Bienvenido</h1>
+                    <p>Regístrate para acceder a una atención odontológica profesional y personalizada</p>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const tipoIdSelect = document.getElementById('tipo_id');
+            const cedulaInput = document.getElementById('cedula');
+            const labelCedula = document.getElementById('label_cedula');
+
+            function actualizarValidacion() {
+                if (tipoIdSelect.value === 'nacional') {
+                    cedulaInput.pattern = '[0-9]{10}';
+                    cedulaInput.title = 'Debe ser un número de cédula válido (10 dígitos)';
+                    cedulaInput.placeholder = 'Ej: 0102030405';
+                    labelCedula.textContent = 'Cédula';
+                    cedulaInput.value = cedulaInput.value.replace(/[^0-9]/g, '').slice(0, 10);
+                } else if (tipoIdSelect.value === 'extranjero') {
+                    cedulaInput.pattern = '[A-Za-z0-9]{5,20}';
+                    cedulaInput.title = 'Ingrese un número de pasaporte válido (5 a 20 caracteres)';
+                    cedulaInput.placeholder = 'Ej: A12345XYZ';
+                    labelCedula.textContent = 'Pasaporte';
+                } else {
+                    cedulaInput.pattern = '';
+                    cedulaInput.title = '';
+                    cedulaInput.placeholder = 'Ingrese su identificación';
+                    labelCedula.textContent = 'Número';
+                }
+            }
+
+            tipoIdSelect.addEventListener('change', actualizarValidacion);
+            window.addEventListener('load', actualizarValidacion);
+        </script>
+</body>
+
+</html>

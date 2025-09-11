@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Odontograma Simbólico</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+    <style>
+        .odontograma-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 61px);
+            gap: 5px;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        
+        .pieza {
+            width: 60px;
+            height: 60px;
+            background-color: #aaa;
+            border: 2px solid #555;
+            border-radius: 5px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: rgb(2, 2, 2);
+            font-size: 12px;
+        }
+        
+        .pieza-icono {
+            font-size: 22px;
+        }
+        
+        .pieza-number {
+            font-size: 12px;
+            position: absolute;
+            bottom: 4px;
+        }
+        
+        .procedimiento-icono {
+            position: absolute;
+            top: 4px;
+            font-size: 20px;
+            font-weight: bold;
+            line-height: 1;
+        }
+        
+        .zona-titulo {
+            text-align: center;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        /* ===== Colores aplicados directamente a .procedimiento-icono según su clase ===== */
+        
+        .procedimiento-icono.sellante-necesario {
+            color: red;
+        }
+        
+        .procedimiento-icono.sellante-realizado {
+            color: blue;
+        }
+        
+        .procedimiento-icono.caries {
+            color: red;
+        }
+        
+        .procedimiento-icono.obturado {
+            color: blue;
+        }
+        
+        .procedimiento-icono.endodoncia {
+            color: red;
+        }
+        
+        .procedimiento-icono.corona {
+            color: red;
+        }
+        
+        .procedimiento-icono.protesis-fija {
+            color: red;
+        }
+        
+        .procedimiento-icono.protesis-removible {
+            color: red;
+        }
+        
+        .procedimiento-icono.protesis-total {
+            color: red;
+        }
+        
+        .procedimiento-icono.perdida-otra {
+            color: red;
+        }
+        
+        .procedimiento-icono.extraccion-indicada {
+            color: red;
+        }
+        
+        .procedimiento-icono.perdida-caries {
+            color: blue;
+        }
+    </style>
+
+    <%- include('adminHOMEheader') %>
+
+</head>
+
+<body>
+
+    <div class="container-fluid px-5 my-5 pt-4">
+
+        <h2 class="mb-3">Historial Clínico de
+            <%= paciente ? paciente.nombre : 'Paciente' %>
+        </h2>
+        <div class="mb-4">
+            <a href="/admin/historiales-clinicos/<%= paciente.id %>" class="btn btn-outline-primary me-2">
+                <i class="bi bi-folder2-open"></i> Ver Todos los Historiales Clínicos
+            </a>
+        </div>
+
+        <section id="formHistorial" class="card p-4 shadow-sm bg-white rounded">
+            <h4>Crear Historial Clínico</h4>
+            <form action="/admin/historial-clinico/<%= paciente.id %>/crear" method="POST">
+                <input type="hidden" name="usuario_id" value="<%= paciente.id %>" />
+
+                <div class="mb-3 row">
+                    <div class="col-md-6">
+                        <label for="codigo_hc" class="form-label">Código HC</label>
+                        <input type="text" id="codigo_hc" name="codigo_hc" class="form-control" value="<%= paciente.cedula ? paciente.cedula : paciente.pasaporte %>" readonly />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><%= paciente.cedula ? 'Cédula' : 'Pasaporte' %></label>
+                        <input type="text" class="form-control" value="<%= paciente.cedula ? paciente.cedula : paciente.pasaporte %>" readonly />
+                    </div>
+                </div>
+
+
+                <div class="mb-3 row">
+                    <div class="col-md-6">
+                        <label for="codigo_diagnostico" class="form-label">Código Diagnóstico</label>
+                        <input type="text" class="form-control" id="codigo_diagnostico" name="codigo_diagnostico" list="listaCodigos" placeholder="Ej: C00">
+                        <datalist id="listaCodigos"></datalist>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="nombre_diagnostico" class="form-label">Nombre Diagnóstico</label>
+                        <input type="text" class="form-control" id="nombre_diagnostico" name="nombre_diagnostico" list="listaNombres" placeholder="Ej: TUMOR MALIGNO DEL LABIO">
+                        <datalist id="listaNombres"></datalist>
+                    </div>
+                </div>
+
+
+                <!-- Información Médica -->
+                <h4 class="mt-4 mb-3">Información Médica</h4>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label for="grupo_sanguineo" class="form-label">Grupo Sanguíneo</label>
+                        <select class="form-select form-select-sm" id="grupo_sanguineo" name="grupo_sanguineo" required>
+    <option value="">Seleccione</option>
+    <option value="O+" <%= paciente.grupo_sanguineo === 'O+' ? 'selected' : '' %>>O+</option>
+    <option value="O-" <%= paciente.grupo_sanguineo === 'O-' ? 'selected' : '' %>>O-</option>
+    <option value="A+" <%= paciente.grupo_sanguineo === 'A+' ? 'selected' : '' %>>A+</option>
+    <option value="A-" <%= paciente.grupo_sanguineo === 'A-' ? 'selected' : '' %>>A-</option>
+    <option value="B+" <%= paciente.grupo_sanguineo === 'B+' ? 'selected' : '' %>>B+</option>
+    <option value="B-" <%= paciente.grupo_sanguineo === 'B-' ? 'selected' : '' %>>B-</option>
+    <option value="AB+" <%= paciente.grupo_sanguineo === 'AB+' ? 'selected' : '' %>>AB+</option>
+    <option value="AB-" <%= paciente.grupo_sanguineo === 'AB-' ? 'selected' : '' %>>AB-</option>
+</select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="alergias" class="form-label">Alergia a medicamentos</label>
+                        <select class="form-select form-select-sm" id="alergias" name="alergias" onchange="toggleOtros('alergias')">
+                        <option value="">Seleccione un medicamento</option>
+                        <option value="Paracetamol" <%= paciente.alergias === 'Paracetamol' ? 'selected' : '' %>>Paracetamol</option>
+                        <option value="Analgan" <%= paciente.alergias === 'Analgan' ? 'selected' : '' %>>Analgan</option>
+                        <option value="Ibuprofeno" <%= paciente.alergias === 'Ibuprofeno' ? 'selected' : '' %>>Ibuprofeno</option>
+                        <option value="Amoxicilina" <%= paciente.alergias === 'Amoxicilina' ? 'selected' : '' %>>Amoxicilina</option>
+                        <option value="Penicilina" <%= paciente.alergias === 'Penicilina' ? 'selected' : '' %>>Penicilina</option>
+                        <option value="Aspirina" <%= paciente.alergias === 'Aspirina' ? 'selected' : '' %>>Aspirina</option>
+                        <option value="Ninguno" <%= paciente.alergias === 'Ninguno' ? 'selected' : '' %>>Ninguno</option>
+                        <option value="Otros" <%= paciente.alergias && !['Paracetamol', 'Analgan', 'Ibuprofeno', 'Amoxicilina', 'Penicilina', 'Aspirina', 'Ninguno'].includes(paciente.alergias) ? 'selected' : '' %>>Otros</option>
+                    </select>
+                        <input type="text" id="alergias_otros" name="alergias_otros" class="form-control form-control-sm mt-1" placeholder="Especifique otro medicamento" value="<%= ['Paracetamol', 'Analgan', 'Ibuprofeno', 'Amoxicilina', 'Penicilina', 'Aspirina', 'Ninguno'].includes(paciente.alergias) ? '' : (paciente.alergias || '') %>"
+                            style="display:none;">
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label for="antecedentes_personales" class="form-label">Antecedente Personal</label>
+                        <select class="form-select form-select-sm" id="antecedentes_personales" name="antecedentes_personales" onchange="toggleOtros('antecedentes_personales')">
+                        <option value="">Seleccione uno</option>
+                        <option value="Diabetes" <%= paciente.antecedentes_personales === 'Diabetes' ? 'selected' : '' %>>Diabetes</option>
+                        <option value="Hipertensión" <%= paciente.antecedentes_personales === 'Hipertensión' ? 'selected' : '' %>>Hipertensión</option>
+                        <option value="Asma" <%= paciente.antecedentes_personales === 'Asma' ? 'selected' : '' %>>Asma</option>
+                        <option value="Ninguno" <%= paciente.antecedentes_personales === 'Ninguno' ? 'selected' : '' %>>Ninguno</option>
+                        <option value="Otros" <%= paciente.antecedentes_personales && !['Diabetes', 'Hipertensión', 'Asma', 'Ninguno'].includes(paciente.antecedentes_personales) ? 'selected' : '' %>>Otros</option>
+                    </select>
+                        <input type="text" class="form-control form-control-sm mt-1" id="antecedentes_personales_otros" name="antecedentes_personales_otros" placeholder="Especifique otro antecedente personal" value="<%= paciente.antecedentes_personales && !['Diabetes', 'Hipertensión', 'Asma', 'Ninguno'].includes(paciente.antecedentes_personales) ? paciente.antecedentes_personales : '' %>"
+                            style="display:none;">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="antecedentes_familiares" class="form-label">Antecedente Familiar</label>
+                        <select class="form-select form-select-sm" id="antecedentes_familiares" name="antecedentes_familiares" onchange="toggleOtros('antecedentes_familiares')">
+                        <option value="">Seleccione uno</option>
+                        <option value="Cáncer" <%= paciente.antecedentes_familiares === 'Cáncer' ? 'selected' : '' %>>Cáncer</option>
+                        <option value="Cardiopatía" <%= paciente.antecedentes_familiares === 'Cardiopatía' ? 'selected' : '' %>>Cardiopatía</option>
+                        <option value="Diabetes" <%= paciente.antecedentes_familiares === 'Diabetes' ? 'selected' : '' %>>Diabetes</option>
+                        <option value="Ninguno" <%= paciente.antecedentes_familiares === 'Ninguno' ? 'selected' : '' %>>Ninguno</option>
+                        <option value="Otros" <%= paciente.antecedentes_familiares && !['Cáncer', 'Cardiopatía', 'Diabetes', 'Ninguno'].includes(paciente.antecedentes_familiares) ? 'selected' : '' %>>Otros</option>
+                    </select>
+                        <input type="text" class="form-control form-control-sm mt-1" id="antecedentes_familiares_otros" name="antecedentes_familiares_otros" placeholder="Especifique otro antecedente familiar" value="<%= paciente.antecedentes_familiares && !['Cáncer', 'Cardiopatía', 'Diabetes', 'Ninguno'].includes(paciente.antecedentes_familiares) ? paciente.antecedentes_familiares : '' %>"
+                            style="display:none;">
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label for="medicamentos_actuales" class="form-label">Medicamento Actual</label>
+                        <select class="form-select form-select-sm" id="medicamentos_actuales" name="medicamentos_actuales" onchange="toggleOtros('medicamentos_actuales')">
+                        <option value="">Seleccione uno</option>
+                        <option value="Paracetamol" <%= paciente.medicamentos_actuales === 'Paracetamol' ? 'selected' : '' %>>Paracetamol</option>
+                        <option value="Insulina" <%= paciente.medicamentos_actuales === 'Insulina' ? 'selected' : '' %>>Insulina</option>
+                        <option value="Omeprazol" <%= paciente.medicamentos_actuales === 'Omeprazol' ? 'selected' : '' %>>Omeprazol</option>
+                        <option value="Ninguno" <%= paciente.medicamentos_actuales === 'Ninguno' ? 'selected' : '' %>>Ninguno</option>
+                        <option value="Otros" <%= paciente.medicamentos_actuales && !['Paracetamol', 'Insulina', 'Omeprazol', 'Ninguno'].includes(paciente.medicamentos_actuales) ? 'selected' : '' %>>Otros</option>
+                    </select>
+                        <input type="text" class="form-control form-control-sm mt-1" id="medicamentos_actuales_otros" name="medicamentos_actuales_otros" placeholder="Especifique otro medicamento" value="<%= paciente.medicamentos_actuales && !['Paracetamol', 'Insulina', 'Omeprazol', 'Ninguno'].includes(paciente.medicamentos_actuales) ? paciente.medicamentos_actuales : '' %>"
+                            style="display:none;">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="cirugias" class="form-label">Cirugía previa</label>
+                        <select class="form-select form-select-sm" id="cirugias" name="cirugias" onchange="toggleOtros('cirugias')">
+                        <option value="">Seleccione una</option>
+                        <option value="Apendicectomía" <%= paciente.cirugias === 'Apendicectomía' ? 'selected' : '' %>>Apendicectomía</option>
+                        <option value="Cesárea" <%= paciente.cirugias === 'Cesárea' ? 'selected' : '' %>>Cesárea</option>
+                        <option value="Amigdalectomía" <%= paciente.cirugias === 'Amigdalectomía' ? 'selected' : '' %>>Amigdalectomía</option>
+                        <option value="Ninguno" <%= paciente.cirugias === 'Ninguno' ? 'selected' : '' %>>Ninguno</option>
+                        <option value="Otros" <%= paciente.cirugias && !['Apendicectomía', 'Cesárea', 'Amigdalectomía', 'Ninguno'].includes(paciente.cirugias) ? 'selected' : '' %>>Otros</option>
+                    </select>
+                        <input type="text" class="form-control form-control-sm mt-1" id="cirugias_otros" name="cirugias_otros" placeholder="Especifique otra cirugía" value="<%= paciente.cirugias && !['Apendicectomía', 'Cesárea', 'Amigdalectomía', 'Ninguno'].includes(paciente.cirugias) ? paciente.cirugias : '' %>"
+                            style="display:none;">
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label for="enfermedades_cronicas" class="form-label">Enfermedad Crónica</label>
+                        <select class="form-select form-select-sm" id="enfermedades_cronicas" name="enfermedades_cronicas" onchange="toggleOtros('enfermedades_cronicas')">
+                        <option value="">Seleccione una</option>
+                        <option value="Asma" <%= paciente.enfermedades_cronicas === 'Asma' ? 'selected' : '' %>>Asma</option>
+                        <option value="Epilepsia" <%= paciente.enfermedades_cronicas === 'Epilepsia' ? 'selected' : '' %>>Epilepsia</option>
+                        <option value="Artritis" <%= paciente.enfermedades_cronicas === 'Artritis' ? 'selected' : '' %>>Artritis</option>
+                        <option value="Ninguno" <%= paciente.enfermedades_cronicas === 'Ninguno' ? 'selected' : '' %>>Ninguno</option>
+                        <option value="Otros" <%= paciente.enfermedades_cronicas && !['Asma', 'Epilepsia', 'Artritis', 'Ninguno'].includes(paciente.enfermedades_cronicas) ? 'selected' : '' %>>Otros</option>
+                    </select>
+                        <input type="text" class="form-control form-control-sm mt-1" id="enfermedades_cronicas_otros" name="enfermedades_cronicas_otros" placeholder="Especifique otra enfermedad crónica" value="<%= paciente.enfermedades_cronicas && !['Asma', 'Epilepsia', 'Artritis', 'Ninguno'].includes(paciente.enfermedades_cronicas) ? paciente.enfermedades_cronicas : '' %>"
+                            style="display:none;">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="enfermedades_contagiosas_recientes" class="form-label">Enfermedad Contagiosa Reciente</label>
+                        <select class="form-select form-select-sm" id="enfermedades_contagiosas_recientes" name="enfermedades_contagiosas_recientes" onchange="toggleOtros('enfermedades_contagiosas_recientes')">
+                        <option value="">Seleccione una</option>
+                        <option value="COVID-19" <%= paciente.enfermedades_contagiosas_recientes === 'COVID-19' ? 'selected' : '' %>>COVID-19</option>
+                        <option value="Gripe" <%= paciente.enfermedades_contagiosas_recientes === 'Gripe' ? 'selected' : '' %>>Gripe</option>
+                        <option value="Hepatitis A" <%= paciente.enfermedades_contagiosas_recientes === 'Hepatitis A' ? 'selected' : '' %>>Hepatitis A</option>
+                        <option value="Ninguno" <%= paciente.enfermedades_contagiosas_recientes === 'Ninguno' ? 'selected' : '' %>>Ninguno</option>
+                        <option value="Otros" <%= paciente.enfermedades_contagiosas_recientes && !['COVID-19', 'Gripe', 'Hepatitis A', 'Ninguno'].includes(paciente.enfermedades_contagiosas_recientes) ? 'selected' : '' %>>Otros</option>
+                    </select>
+                        <input type="text" class="form-control form-control-sm mt-1" id="enfermedades_contagiosas_recientes_otros" name="enfermedades_contagiosas_recientes_otros" placeholder="Especifique otra enfermedad contagiosa" value="<%= paciente.enfermedades_contagiosas_recientes && !['COVID-19', 'Gripe', 'Hepatitis A', 'Ninguno'].includes(paciente.enfermedades_contagiosas_recientes) ? paciente.enfermedades_contagiosas_recientes : '' %>"
+                            style="display:none;">
+                    </div>
+                </div>
+
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="fuma" name="fuma" <%=paciente.fuma ? 'checked' : '' %>>
+                    <label class="form-check-label" for="fuma">¿Fuma?</label>
+                </div>
+
+                <div class="form-group mt-2" id="tipo_fuma_contenedor" style="display: none;">
+                    <label for="tipo_fuma" class="form-label">¿Qué tipo?</label>
+                    <select class="form-select form-select-sm" id="tipo_fuma" name="tipo_fuma">
+                    <option value="">Seleccione una opción</option>
+                    <option value="Cigarrillo" <%= paciente.tipo_fuma === 'Cigarrillo' ? 'selected' : '' %>>Cigarrillo</option>
+                    <option value="Marihuana" <%= paciente.tipo_fuma === 'Marihuana' ? 'selected' : '' %>>Marihuana</option>
+                    <option value="Vapeador" <%= paciente.tipo_fuma === 'Vapeador' ? 'selected' : '' %>>Vapeador</option>
+                    <option value="Otros" <%= paciente.tipo_fuma && !['Cigarrillo', 'Marihuana', 'Vapeador'].includes(paciente.tipo_fuma) ? 'selected' : '' %>>Otros</option>
+                </select>
+                    <input type="text" id="tipo_fuma_otros" name="tipo_fuma_otros" class="form-control form-control-sm mt-1" placeholder="Especifique otro tipo" value="<%= paciente.tipo_fuma && !['Cigarrillo', 'Marihuana', 'Vapeador'].includes(paciente.tipo_fuma) ? paciente.tipo_fuma : '' %>"
+                        style="display: none;">
+                </div>
+
+                <div class="form-check mb-4">
+                    <input class="form-check-input" type="checkbox" id="alcohol" name="alcohol" <%=paciente.alcohol ? 'checked' : '' %>>
+                    <label class="form-check-label" for="alcohol">¿Consume alcohol?</label>
+                </div>
+
+                <datalist id="listaCodigos"></datalist>
+                <datalist id="listaNombres"></datalist>
+
+                <h2>Odontograma</h2>
+
+                <div class="d-flex justify-content-start">
+                    <div class="text-start" style="margin-left: 40px;">
+                        <div class="zona-titulo">ADULTO SUPERIOR</div>
+                        <div id="adulto-superior" class="odontograma-grid"></div>
+                        <div class="zona-titulo">ADULTO INFERIOR</div>
+                        <div id="adulto-inferior" class="odontograma-grid"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="zona-titulo">NIÑO SUPERIOR</div>
+                        <div id="nino-superior" class="odontograma-grid"></div>
+                        <div class="zona-titulo">NIÑO INFERIOR</div>
+                        <div id="nino-inferior" class="odontograma-grid"></div>
+                    </div>
+                </div>
+
+                <!-- FORMULARIO -->
+                <form method="POST">
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <label>Seleccionar Procedimiento</label>
+                            <select class="form-control" id="procedimiento-select">
+                    <option value="">Ninguno</option>
+                    <option>Sellante necesario</option>
+                    <option>Sellante realizado</option>
+                    <option>Caries</option>
+                    <option>Obturado</option>
+                    <option>Endodoncia</option>
+                    <option>Corona</option>
+                    <option>Prótesis fija</option>
+                    <option>Prótesis removible</option>
+                    <option>Prótesis total</option>
+                    <option>Pérdida (otra causa)</option>
+                    <option>Extracción indicada</option>
+                    <option>Pérdida por caries</option>
+                </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label>Seleccionar Cara</label>
+                            <select class="form-control" id="cara-select">
+                    <option value="">Ninguno</option>
+                    <option>Superior</option>
+                    <option>Inferior</option>
+                    <option>Lateral</option>
+                    <option>Medial</option>
+                </select>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="odontograma_json" id="odontograma_json">
+                    <br>
+                    <div class="mb-3">
+                        <label for="tratamientos" class="form-label">Tratamientos</label>
+                        <textarea id="tratamientos" name="tratamientos" class="form-control" rows="4" required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="medicamentos" class="form-label">Medicamentos</label>
+                        <textarea id="medicamentos" name="medicamentos" class="form-control" rows="3" required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="prescripcion" class="form-label">Prescripción</label>
+                        <textarea id="prescripcion" name="prescripcion" class="form-control" rows="3" required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="observaciones" class="form-label">Observaciones</label>
+                        <textarea id="observaciones" name="observaciones" class="form-control" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Guardar Historial Clínico</button>
+
+                </form>
+        </section>
+    </div>
+    <script>
+        const piezasTratadasPrevias = <%- JSON.stringify(piezasTratadas) %>;
+
+        // Al cargar la página, recorrer cada pieza tratada
+        piezasTratadasPrevias.forEach(pieza => {
+            // Aquí debes tener una función que coloree o marque la pieza en el odontograma visual
+            marcarPiezaComoTratada(pieza.numero, pieza.cara, pieza.icono, pieza.procedimiento);
+        });
+    </script>
+    <script>
+        const diagnosticos = <%- JSON.stringify(diagnosticosJSON) %>;
+        console.log("Diagnósticos cargados:", diagnosticos);
+
+
+        function cargarDatalist() {
+            const listaCodigos = document.getElementById('listaCodigos');
+            const listaNombres = document.getElementById('listaNombres');
+
+            diagnosticos.forEach(d => {
+                const optCodigo = document.createElement('option');
+                optCodigo.value = d.codigo;
+                listaCodigos.appendChild(optCodigo);
+
+                const optNombre = document.createElement('option');
+                optNombre.value = d.nombre;
+                listaNombres.appendChild(optNombre);
+            });
+        }
+
+        function actualizarDesdeCodigo(codigo) {
+            const diag = diagnosticos.find(d => d.codigo === codigo.toUpperCase());
+            if (diag) {
+                document.getElementById('nombre_diagnostico').value = diag.nombre;
+                mostrarDescripcion(diag.descripcion);
+            } else {
+                mostrarDescripcion(null);
+            }
+        }
+
+        function actualizarDesdeNombre(nombre) {
+            const diag = diagnosticos.find(d => d.nombre === nombre.toUpperCase());
+            if (diag) {
+                document.getElementById('codigo_diagnostico').value = diag.codigo;
+                mostrarDescripcion(diag.descripcion);
+            } else {
+                mostrarDescripcion(null);
+            }
+        }
+
+        function mostrarDescripcion(desc) {
+            const contenedor = document.getElementById('descripcion_diagnostico');
+            if (desc) {
+                contenedor.classList.remove('d-none');
+                contenedor.textContent = desc;
+            } else {
+                contenedor.classList.add('d-none');
+                contenedor.textContent = '';
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            cargarDatalist();
+
+            document.getElementById('codigo_diagnostico').addEventListener('input', function() {
+                actualizarDesdeCodigo(this.value.trim());
+            });
+
+            document.getElementById('nombre_diagnostico').addEventListener('input', function() {
+                actualizarDesdeNombre(this.value.trim());
+            });
+        });
+
+        window.addEventListener('DOMContentLoaded', cargarDatalist);
+    </script>
+
+    </form>
+
+    <!-- SCRIPT -->
+    <script>
+        const odontograma = {
+            'adulto-superior': [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28],
+            'adulto-inferior': [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38],
+            'nino-superior': [55, 54, 53, 52, 51, 61, 62, 63, 64, 65],
+            'nino-inferior': [85, 84, 83, 82, 81, 71, 72, 73, 74, 75]
+        };
+
+        const simbolos = {
+            "Sellante necesario": {
+                clase: "sellante-necesario",
+                icono: "*"
+            },
+            "Sellante realizado": {
+                clase: "sellante-realizado",
+                icono: "*"
+            },
+            "Caries": {
+                clase: "caries",
+                icono: "○"
+            },
+            "Obturado": {
+                clase: "obturado",
+                icono: "●"
+            },
+            "Endodoncia": {
+                clase: "endodoncia",
+                icono: "△"
+            },
+            "Corona": {
+                clase: "corona",
+                icono: "▭"
+            },
+            "Prótesis fija": {
+                clase: "protesis-fija",
+                icono: "="
+            },
+            "Prótesis removible": {
+                clase: "protesis-removible",
+                icono: "≡"
+            },
+            "Prótesis total": {
+                clase: "protesis-total",
+                icono: "≡≡"
+            },
+            "Pérdida (otra causa)": {
+                clase: "perdida-otra",
+                icono: "⊗"
+            },
+            "Extracción indicada": {
+                clase: "extraccion-indicada",
+                icono: "X"
+            },
+            "Pérdida por caries": {
+                clase: "perdida-caries",
+                icono: "X"
+            }
+        };
+
+        function crearOdontograma() {
+            for (const zona in odontograma) {
+                const contenedor = document.getElementById(zona);
+                odontograma[zona].forEach(pieza => {
+                    const div = document.createElement("div");
+                    div.className = "pieza";
+                    div.innerHTML = `
+                    <div class="procedimiento-icono"></div>
+                    <div class="pieza-icono">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white" viewBox="0 0 16 16">
+                            <path d="M3.654 0c-1.296 0-2.323 1.114-2.323 2.49 0 .991.328 1.94.816 2.623.485.678 1.146 1.18 1.758 1.586-.008.165-.015.332-.015.502 0 2.908.548 5.769 1.226 7.889.084.26.344.42.616.42s.532-.161.616-.42c.678-2.12 1.226-4.981 1.226-7.889 0-.17-.007-.337-.015-.502.612-.406 1.273-.908 1.758-1.586.488-.684.816-1.632.816-2.623C13.669 1.114 12.641 0 11.346 0c-.694 0-1.32.331-1.788.869A3.278 3.278 0 0 0 8 1.6a3.278 3.278 0 0 0-.558-.731C6.974.33 6.348 0 5.654 0z"/>
+                        </svg>
+                    </div>
+                    <div class="pieza-number">${pieza}</div>
+                `;
+                    div.onclick = () => seleccionarProcedimiento(div, pieza);
+                    contenedor.appendChild(div);
+                });
+            }
+        }
+
+        function seleccionarProcedimiento(div, numero) {
+            const procedimiento = document.getElementById("procedimiento-select").value;
+            const cara = document.getElementById("cara-select").value;
+
+            const procIcon = div.querySelector(".procedimiento-icono");
+            procIcon.textContent = "";
+            procIcon.className = "procedimiento-icono";
+            div.style.border = "2px solid #555";
+
+            if (simbolos[procedimiento]) {
+                const simbolo = simbolos[procedimiento];
+                procIcon.textContent = simbolo.icono;
+                procIcon.classList.add(simbolo.clase);
+
+                // 🔹 Guardamos explícitamente el nombre del procedimiento
+                div.setAttribute("data-procedimiento", procedimiento);
+            } else {
+                div.removeAttribute("data-procedimiento");
+            }
+
+            // Color de borde
+            if (cara === "Superior") div.style.border = "2px solid blue";
+            else if (cara === "Inferior") div.style.border = "2px solid green";
+            else if (cara === "Lateral") div.style.border = "2px solid purple";
+            else if (cara === "Medial") div.style.border = "2px solid orange";
+        }
+
+
+        function obtenerCaraDesdeBorde(borde) {
+            if (borde.includes("blue")) return "Superior";
+            if (borde.includes("green")) return "Inferior";
+            if (borde.includes("purple")) return "Lateral";
+            if (borde.includes("orange")) return "Medial";
+            return null;
+        }
+
+        document.querySelector("form").addEventListener("submit", function(e) {
+            const datos = [];
+            document.querySelectorAll(".pieza").forEach(div => {
+                const numero = div.querySelector(".pieza-number").textContent;
+                const icono = div.querySelector(".procedimiento-icono").textContent;
+                const procedimientoNombre = div.getAttribute("data-procedimiento");
+
+                if (icono && procedimientoNombre) {
+                    const cara = obtenerCaraDesdeBorde(div.style.border);
+
+                    datos.push({
+                        numero,
+                        procedimiento: procedimientoNombre,
+                        icono,
+                        cara
+                    });
+                }
+            });
+
+            document.getElementById("odontograma_json").value = JSON.stringify(datos, null, 2);
+        });
+
+        function toggleOtros(campo) {
+            const select = document.getElementById(campo);
+            const valor = select.value;
+            const inputOtros = document.getElementById(`${campo}_otros`);
+
+            if (valor === "Otros") {
+                inputOtros.style.display = "block";
+            } else {
+                inputOtros.style.display = "none";
+                inputOtros.value = "";
+            }
+        }
+
+        // Para cada select que tiene "Otros", llamar a toggleOtros al cargar la página
+        window.addEventListener('DOMContentLoaded', () => {
+            // Lista de campos que tienen la lógica "Otros"
+            const campos = [
+                'alergias',
+                'antecedentes_personales',
+                'antecedentes_familiares',
+                'medicamentos_actuales',
+                'cirugias',
+                'enfermedades_cronicas',
+                'enfermedades_contagiosas_recientes',
+                'tipo_fuma'
+            ];
+
+            campos.forEach(campo => {
+                const select = document.getElementById(campo);
+                const inputOtros = document.getElementById(`${campo}_otros`);
+
+                // Mostrar el campo "otros" si el valor no está en las opciones y no es vacío
+                if (select && inputOtros) {
+                    const opciones = Array.from(select.options).map(o => o.value);
+                    if (select.value && !opciones.includes(select.value)) {
+                        select.value = "Otros";
+                        inputOtros.style.display = "block";
+                    } else if (select.value === "Otros") {
+                        inputOtros.style.display = "block";
+                    } else {
+                        inputOtros.style.display = "none";
+                    }
+
+                    // Agregar listener para mostrar/ocultar input cuando cambie el select
+                    select.addEventListener('change', () => toggleOtros(campo));
+                }
+            });
+        });
+
+
+        window.onload = crearOdontograma;
+    </script>
+    <script>
+        const fumaCheckbox = document.getElementById('fuma');
+        const tipoFumaContenedor = document.getElementById('tipo_fuma_contenedor');
+        const tipoFumaSelect = document.getElementById('tipo_fuma');
+        const tipoFumaOtrosInput = document.getElementById('tipo_fuma_otros');
+
+        function actualizarVisibilidadTipoFuma() {
+            if (fumaCheckbox.checked) {
+                tipoFumaContenedor.style.display = 'block';
+            } else {
+                tipoFumaContenedor.style.display = 'none';
+                tipoFumaSelect.value = '';
+                tipoFumaOtrosInput.style.display = 'none';
+                tipoFumaOtrosInput.value = '';
+            }
+        }
+
+        function actualizarVisibilidadOtros() {
+            if (tipoFumaSelect.value === 'Otros') {
+                tipoFumaOtrosInput.style.display = 'block';
+            } else {
+                tipoFumaOtrosInput.style.display = 'none';
+                tipoFumaOtrosInput.value = '';
+            }
+        }
+
+        fumaCheckbox.addEventListener('change', actualizarVisibilidadTipoFuma);
+        tipoFumaSelect.addEventListener('change', actualizarVisibilidadOtros);
+
+        // Inicializar estados al cargar
+        actualizarVisibilidadTipoFuma();
+        actualizarVisibilidadOtros();
+    </script>
+
+
+</body>
+
+</html>

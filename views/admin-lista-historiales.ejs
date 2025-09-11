@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Todos los Historiales Clínicos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css" rel="stylesheet" />
+    <style>
+        .preserve-whitespace {
+            white-space: pre-wrap;
+        }
+        
+        .search-container {
+            margin-bottom: 20px;
+        }
+        
+        .form-control::placeholder {
+            font-style: italic;
+        }
+        
+        .paciente-seccion {
+            margin-bottom: 50px;
+        }
+        
+        .paciente-seccion h4 {
+            background-color: #0d6efd;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .table .btn {
+            margin: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <%- include('adminHOMEheader') %>
+
+        <div class="container my-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0 flex-grow-1 text-center">Todos los Historiales Clínicos</h2>
+            </div>
+
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold text-primary mb-3">Buscar Información de Paciente</h5>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-6">
+                            <label for="searchInput" class="form-label fw-bold">Buscar HC por Nombre o N° Identificación</label>
+                            <input type="text" id="searchInput" class="form-control" placeholder="Ej. María o 0912345678..." onkeyup="filtrarTabla()" />
+                        </div>
+                        <div class="col-md-6">
+                            <form action="/admin/odontograma" method="GET">
+                                <label for="inputOdontograma" class="form-label fw-bold">Ver Odontograma por Cédula o Pasaporte</label>
+                                <div class="input-group">
+                                    <input type="text" id="inputOdontograma" name="documento" class="form-control" placeholder="Ej. 0912345678 o P123456..." required />
+                                    <button class="btn btn-outline-primary" type="submit">
+                  <i class="bi bi-search"></i>
+                </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <% if (historiales.length === 0) { %>
+                <div class="alert alert-info">No hay historiales clínicos registrados.</div>
+                <% } else { 
+      const agrupados = {};
+      historiales.forEach(h => {
+        if (h.seguimiento_de === null) {
+          if (!agrupados[h.usuario_id]) {
+            agrupados[h.usuario_id] = {
+              nombre: h.nombre,
+              cedula: h.cedula,
+              historiales: []
+            };
+          }
+          agrupados[h.usuario_id].historiales.push(h);
+        }
+      });
+
+      function formatearProcedimiento(clase) {
+        const map = {
+          'seleccionada-sellante-necesario': 'Sellante necesario',
+          'seleccionada-sellante-realizado': 'Sellante realizado',
+          'seleccionada-caries': 'Caries',
+          'seleccionada-endodoncia': 'Endodoncia',
+          'seleccionada-prótesis-fija': 'Prótesis fija',
+          'seleccionada-relleno': 'Obturación',
+          'seleccionada-corona': 'Corona',
+          'tachada-extraccion-indicada': 'Extracción indicada',
+          'tachada-perdida-por-caries': 'Pérdida por caries'
+        };
+        return map[clase] || clase;
+      }
+    %>
+
+                    <% Object.keys(agrupados).forEach(uid => { 
+      const paciente = agrupados[uid];
+    %>
+                        <div class="paciente-seccion">
+                            <h4>Paciente:
+                                <%= paciente.nombre %> (
+                                    <%= paciente.cedula %>)</h4>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped">
+                                    <thead class="table-primary">
+                                        <tr>
+                                            <th>Código HC</th>
+                                            <th>Fecha</th>
+                                            <th>Alergias</th>
+                                            <th>Medicamentos</th>
+                                            <th>Observaciones</th>
+                                            <th>Diagnóstico</th>
+                                            <th>Piezas</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% paciente.historiales.forEach(hist => { %>
+                                            <%
+  let piezas = [];
+  try {
+    if (typeof hist.odontograma_json === 'string') {
+      piezas = JSON.parse(hist.odontograma_json);
+    } else if (Array.isArray(hist.odontograma_json)) {
+      piezas = hist.odontograma_json;
+    } else {
+      piezas = [];
+    }
+  } catch (error) {
+    piezas = [];
+  }
+
+  if (!Array.isArray(piezas)) {
+    piezas = [];
+  }
+%>
+
+                                                <tr>
+                                                    <td>
+                                                        <%= hist.codigo_hc %>
+                                                    </td>
+                                                    <td>
+                                                        <%= new Date(hist.created_at).toLocaleDateString() %>
+                                                    </td>
+                                                    <td><pre class="preserve-whitespace"><%= hist.alergias || '—' %></pre></td>
+                                                    <td><pre class="preserve-whitespace"><%= hist.medicamentos || '—' %></pre></td>
+                                                    <td><pre class="preserve-whitespace"><%= hist.observaciones || '—' %></pre></td>
+                                                    <td>
+                                                        <%= hist.nombre_diagnostico || '—' %>
+                                                    </td>
+                                                    <td>
+                                                        <ul class="mb-0">
+                                                            <% if (piezas.length > 0) { %>
+                                                                <% piezas.forEach(p => { %>
+                                                                    <li>
+                                                                        🦷 Pieza <strong><%= p.numero %></strong>:
+                                                                        <%= formatearProcedimiento(p.procedimiento) %>
+                                                                            <% if (p.cara) { %> (cara
+                                                                                <%= p.cara %>)
+                                                                                    <% } %>
+                                                                    </li>
+                                                                    <% }); %>
+                                                                        <% } else { %>
+                                                                            <li><em>No hay piezas tratadas</em></li>
+                                                                            <% } %>
+                                                        </ul>
+                                                    </td>
+                                                    <td>
+                                                        <div class="d-flex flex-wrap gap-2">
+                                                            <a href="/admin/historial-clinico/<%= hist.usuario_id %>/seguimiento/<%= hist.id %>" class="btn btn-outline-primary btn-sm" title="Agregar Seguimiento">
+                                                                <i class="bi bi-journal-plus"></i>
+                                                            </a>
+                                                            <a href="/admin/historial-clinico/<%= hist.usuario_id %>/seguimientos/<%= hist.id %>" class="btn btn-outline-info btn-sm" title="Ver Seguimientos">
+                                                                <i class="bi bi-eye"></i>
+                                                            </a>
+                                                            <a href="/admin/historial-clinico/<%= hist.usuario_id %>/editar/<%= hist.id %>" class="btn btn-outline-secondary btn-sm" title="Editar">
+                                                                <i class="bi bi-pencil-square"></i>
+                                                            </a>
+                                                            <form action="/admin/historial-clinico/eliminar" method="POST" style="display:inline;">
+                                                                <input type="hidden" name="id" value="<%= hist.id %>" />
+                                                                <button class="btn btn-outline-danger btn-sm" type="submit" title="Eliminar">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                                                            </form>
+                                                            <a href="/admin/historiales-clinicos/<%= hist.usuario_id %>/imprimir" target="_blank" class="btn btn-outline-success btn-sm" title="Imprimir">
+                                                                <i class="bi bi-printer"></i>
+                                                            </a>
+                                                            <a href="/admin/historial-clinico/<%= hist.usuario_id %>/receta/<%= hist.id %>" target="_blank" class="btn btn-outline-warning btn-sm" title="Receta">
+                                                                <i class="bi bi-file-earmark-medical"></i>
+                                                            </a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <% }); %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <% }); %>
+                            <% } %>
+        </div>
+
+        <script>
+            function filtrarTabla() {
+                const input = document.getElementById("searchInput").value.toLowerCase();
+                const secciones = document.querySelectorAll(".paciente-seccion");
+                secciones.forEach(sec => {
+                    const texto = sec.textContent.toLowerCase();
+                    sec.style.display = texto.includes(input) ? "" : "none";
+                });
+            }
+        </script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

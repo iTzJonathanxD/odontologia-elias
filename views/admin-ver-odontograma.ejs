@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Odontograma -
+        <%= paciente.nombre %>
+    </title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body {
+            background-color: white;
+            font-family: Arial, sans-serif;
+            color: #333;
+        }
+        
+        .logo-esquina {
+            position: absolute;
+            top: 20px;
+            width: 80px;
+            height: auto;
+        }
+        
+        .logo-izquierda {
+            left: 20px;
+        }
+        
+        .header-title {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        
+        .odontograma-container {
+            max-width: 900px;
+            margin: auto;
+            padding: 20px;
+            padding-top: 100px;
+        }
+        
+        .odontograma-zona {
+            margin-bottom: 20px;
+        }
+        
+        .odontograma-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .pieza {
+            width: 52px;
+            height: 60px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            background-color: white;
+            border: 2px solid #999;
+            position: relative;
+            font-size: 12px;
+            padding-top: 2px;
+        }
+        
+        .pieza span.emoji {
+            font-size: 24px;
+            display: block;
+            margin-bottom: 2px;
+        }
+        
+        .icono-procedimiento {
+            position: absolute;
+            top: 0;
+            left: 0;
+            font-size: 14px;
+            font-weight: bold;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .icono-procedimiento span {
+            margin: 1px 2px;
+        }
+        
+        .titulo-zona {
+            text-align: center;
+            font-weight: bold;
+            font-size: 16px;
+            color: #0d47a1;
+            margin-bottom: 8px;
+        }
+        
+        .btn,
+        .volver {
+            margin-top: 20px;
+        }
+        
+        @media print {
+            body {
+                margin: 0;
+                background: white;
+                color: black;
+            }
+            .btn,
+            .volver {
+                display: none;
+            }
+            .odontograma-container {
+                width: 100%;
+                margin: 0 auto;
+                padding: 0;
+                page-break-inside: avoid;
+            }
+            .logo-esquina {
+                position: fixed;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <img src="/images/Logo.jpg" alt="Logo Izquierda" class="logo-esquina logo-izquierda">
+    <div class="header-title">
+        <h5>CONSULTORIO ODONTOLÓGICO</h5>
+        <h6>Dra. Joseline Delgado – Odontología Especializada</h6>
+        <hr style="width: 60px; margin: auto; border-top: 2px solid #0d47a1;">
+    </div>
+    <div class="odontograma-container text-center">
+        <h3 class="fw-bold">Odontograma de
+            <%= paciente.nombre %>
+        </h3>
+        <p>Cédula/Pasaporte: <strong><%= paciente.cedula || paciente.pasaporte %></strong></p>
+        <p>Código HC: <strong><%= paciente.cedula || paciente.pasaporte %></strong></p>
+
+        <% const simbolos = {
+            "Sellante necesario": { icono: "*", color: "red" },
+            "Sellante realizado": { icono: "*", color: "blue" },
+            "Caries": { icono: "○", color: "red" },
+            "Obturado": { icono: "●", color: "blue" },
+            "Endodoncia": { icono: "△", color: "red" },
+            "Corona": { icono: "▭", color: "red" },
+            "Prótesis fija": { icono: "=", color: "red" },
+            "Prótesis removible": { icono: "≡", color: "red" },
+            "Prótesis total": { icono: "≡≡", color: "red" },
+            "Pérdida (otra causa)": { icono: "⊗", color: "red" },
+            "Extracción indicada": { icono: "X", color: "red" },
+            "Pérdida por caries": { icono: "X", color: "blue" }
+        }; %>
+
+            <% const renderZona = (inicio, fin) => { %>
+                <div class="odontograma-grid">
+                    <% for(let i = inicio; inicio < fin ? i <= fin : i >= fin; inicio < fin ? i++ : i--) {
+                    const pieza = piezas.find(p => p.numero == i);
+                %>
+                        <div class="pieza">
+                            <span class="emoji">🦷</span>
+                            <% if(pieza && pieza.tratamientos) { %>
+                                <div class="icono-procedimiento">
+                                    <% pieza.tratamientos.forEach(t => {
+                                const simb = simbolos[t.procedimiento] || {icono: '?', color: 'gray'};
+                            %>
+                                        <span style="color:<%= simb.color %>"><%= simb.icono %></span>
+                                        <% }) %>
+                                </div>
+                                <% } %>
+                                    <%= i %>
+                        </div>
+                        <% } %>
+                </div>
+                <% } %>
+
+                    <!-- Adulto Superior -->
+                    <div class="odontograma-zona">
+                        <div class="titulo-zona">Adulto Superior</div>
+                        <% renderZona(18, 11) %>
+                            <% renderZona(21, 28) %>
+                    </div>
+
+                    <!-- Adulto Inferior -->
+                    <div class="odontograma-zona">
+                        <div class="titulo-zona">Adulto Inferior</div>
+                        <% renderZona(48, 41) %>
+                            <% renderZona(31, 38) %>
+                    </div>
+
+                    <% if (piezas.length > 0) { %>
+                        <div class="mt-5">
+                            <h5 class="fw-bold">Piezas Tratadas</h5>
+                            <div class="table-responsive">
+                                <table class="table table-bordered align-middle text-center">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Pieza</th>
+                                            <th>Tratamientos</th>
+                                            <th>Iconos</th>
+                                            <th>Colores</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% 
+    piezas.forEach(p => {
+      if (p.numero == 45) {
+        p.tratamientos.forEach(t => {
+          const simb = simbolos[t.procedimiento] || {icono: '?', color: 'gray'};
+  %>
+                                            <tr>
+                                                <td><strong>45</strong></td>
+                                                <td>
+                                                    <%= t.procedimiento %>
+                                                        <% if(t.cara) { %> (
+                                                            <%= t.cara %>)
+                                                                <% } %>
+                                                </td>
+                                                <td>
+                                                    <span style="color:<%= simb.color %>; font-weight:bold; font-size:20px;"><%= simb.icono %></span>
+                                                </td>
+                                                <td>
+                                                    <div style="width: 30px; height: 30px; margin: auto; border-radius: 6px; background-color: <%= simb.color %>; border: 1px solid #333;"></div>
+                                                </td>
+                                            </tr>
+                                            <% 
+        });
+      } else {
+  %>
+                                                <tr>
+                                                    <td><strong><%= p.numero %></strong></td>
+                                                    <td>
+                                                        <% p.tratamientos.forEach(t => { %>
+                                                            <div>
+                                                                <%= t.procedimiento %>
+                                                                    <% if(t.cara) { %> (
+                                                                        <%= t.cara %>)
+                                                                            <% } %>
+                                                            </div>
+                                                            <% }) %>
+                                                    </td>
+                                                    <td>
+                                                        <% p.tratamientos.forEach(t => {
+          const simb = simbolos[t.procedimiento] || {icono: '?', color: 'gray'};
+        %>
+                                                            <span style="color:<%= simb.color %>; font-weight:bold; font-size:20px;"><%= simb.icono %></span>
+                                                            <% }) %>
+                                                    </td>
+                                                    <td>
+                                                        <% p.tratamientos.forEach(t => {
+          const simb = simbolos[t.procedimiento] || {icono: '?', color: 'gray'};
+        %>
+                                                            <div style="width: 30px; height: 30px; margin: auto; border-radius: 6px; background-color: <%= simb.color %>; border: 1px solid #333;"></div>
+                                                            <% }) %>
+                                                    </td>
+                                                </tr>
+                                                <% 
+      }
+    }); 
+  %>
+                                    </tbody>
+
+                                </table>
+                            </div>
+                        </div>
+                        <% } %>
+
+                            <a href="/admin-todos-historiales" class="btn btn-secondary volver">Volver</a>
+                            <button onclick="window.print()" class="btn btn-outline-dark volver float-end">🖸️ Imprimir</button>
+    </div>
+</body>
+
+</html>

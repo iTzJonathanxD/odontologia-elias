@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Seguimientos del Historial Clínico</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .seguimiento-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .seguimiento-header {
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        
+        .btn-edit {
+            float: right;
+        }
+    </style>
+</head>
+
+<body>
+    <%- include('adminHOMEheader') %>
+
+        <div class="container mt-4">
+            <h3 class="mb-4">Seguimientos del paciente
+                <%= paciente.nombre %>
+            </h3>
+
+            <% if (seguimientos.length > 0) { %>
+                <% seguimientos.forEach(seg => { %>
+                    <div class="seguimiento-card">
+                        <div class="seguimiento-header">
+                            Seguimiento registrado el
+                            <%= new Date(seg.created_at).toLocaleDateString() %>
+                                <a href="/admin/editar-seguimiento/<%= seg.id %>" class="btn btn-sm btn-outline-primary btn-edit">
+                                    <i class="bi bi-pencil-square"></i> Editar
+                                </a>
+                        </div>
+                        <p><strong>Tratamientos:</strong>
+                            <%= seg.tratamientos %>
+                        </p>
+                        <p><strong>Medicamentos:</strong>
+                            <%= seg.medicamentos %>
+                        </p>
+                        <p><strong>Prescripción:</strong>
+                            <%= seg.prescripcion %>
+                        </p>
+                        <p><strong>Observaciones:</strong>
+                            <%= seg.observaciones %>
+                        </p>
+                    </div>
+                    <% }) %>
+                        <% } else { %>
+                            <div class="alert alert-warning">No hay seguimientos registrados para este historial clínico.</div>
+                            <% } %>
+
+                                <a href="/admin/historial-clinico/<%= paciente.id %>" class="btn btn-secondary mt-3">Volver</a>
+        </div>
+</body>
+
+</html>

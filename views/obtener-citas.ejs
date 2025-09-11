@@ -1,0 +1,330 @@
+<!-- Código HTML completo con validación de horas en el modal -->
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Agendar Cita</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/locale/es.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+    <style>
+        #calendar {
+            max-width: 900px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 12px 30px rgb(0 0 0 / 0.1);
+            padding: 20px;
+        }
+        
+        .fc-event.agendado {
+            background-color: #dc3545 !important;
+            border-radius: 8px !important;
+            font-weight: 600;
+            box-shadow: 0 2px 5px rgb(220 53 69 / 0.5);
+            transition: transform 0.15s ease-in-out;
+        }
+        
+        .fc-event.agendado:hover,
+        .fc-event.libre:hover {
+            transform: scale(1.05);
+        }
+        
+        .fc-event.libre {
+            background-color: #28a745 !important;
+            border-radius: 8px !important;
+            font-weight: 600;
+            box-shadow: 0 2px 5px rgb(40 167 69 / 0.5);
+        }
+        
+        .modal-content {
+            border-radius: 15px;
+            box-shadow: 0 15px 40px rgb(0 0 0 / 0.25);
+            padding: 25px;
+        }
+        
+        #botones-citas-dia {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        #botones-citas-dia button {
+            min-width: 140px;
+            padding: 12px 18px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 700;
+            font-size: 1rem;
+            box-shadow: 0 6px 15px rgb(0 0 0 / 0.1);
+            cursor: default;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: white;
+        }
+        
+        #botones-citas-dia button.ocupado {
+            background: #dc3545;
+            box-shadow: 0 6px 20px rgb(220 53 69 / 0.6);
+        }
+        
+        #botones-citas-dia button.libre {
+            background: #28a745;
+            box-shadow: 0 6px 20px rgb(40 167 69 / 0.6);
+        }
+        
+        .modal-header {
+            border-bottom: none;
+            padding-bottom: 10px;
+        }
+        
+        .btn-close {
+            filter: drop-shadow(0 0 2px rgba(255 255 255 / 0.9));
+        }
+        
+        .btn.libre {
+            background: #28a745;
+            color: white;
+            font-weight: bold;
+            border-radius: 12px;
+            padding: 10px 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <%- include('HOMEheader') %>
+
+        <h1 class="text-center mt-5 mb-2">CALENDARIO MENSUAL</h1>
+        <h2 class="text-center mb-4 text-muted">Verificar citas agendadas de los pacientes</h2>
+
+        <div class="text-center mb-4">
+            <a href="/agendar-cita" class="btn btn-primary btn-lg shadow">
+                <i class="bi bi-plus-circle"></i> Agendar Cita
+            </a>
+        </div>
+
+        <div class="container my-4 text-center">
+            <div class="d-inline-flex align-items-center gap-4">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="width:20px; height:20px; background:#28a745; border-radius:5px;"></span><span>Disponible</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span style="width:20px; height:20px; background:#dc3545; border-radius:5px;"></span><span>Agendado</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="calendar"></div>
+
+        <!-- Modal de horarios disponibles -->
+        <div class="modal fade" id="modalCitas" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="modalCitasLabel"></h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="botones-citas-dia"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para confirmar agendamiento -->
+        <div class="modal fade" id="modalConfirmar" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title">Confirmar cita</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div id="mensajeExito" class="alert alert-success d-none"></div>
+                    <div id="mensajeError" class="alert alert-danger d-none"></div>
+                    <div class="modal-body">
+                        <form id="formConfirmarCita">
+                            <input type="hidden" name="fecha" id="inputFecha">
+                            <input type="hidden" name="hora" id="inputHora">
+                            <input type="hidden" name="tipoDocumento" id="inputTipoDocumento">
+                            <!-- Campo oculto para el tipo de documento -->
+
+                            <p><strong>Nombre:</strong>
+                                <%= usuario.nombre %>
+                            </p>
+
+                            <% if (usuario.tipo_id === 'nacional') { %>
+                                <p><strong>Cédula:</strong>
+                                    <%= usuario.cedula %>
+                                </p>
+                                <% } else if (usuario.tipo_id === 'extranjero') { %>
+                                    <p><strong>Pasaporte:</strong>
+                                        <%= usuario.pasaporte %>
+                                    </p>
+                                    <% } else { %>
+                                        <p><strong>Documento:</strong> No especificado</p>
+                                        <% } %>
+
+                                            <p><strong>Fecha:</strong> <span id="fechaSeleccionada"></span></p>
+                                            <p><strong>Hora:</strong> <span id="horaSeleccionada"></span></p>
+
+                                            <div class="mb-3">
+                                                <label for="especialidad" class="form-label"><strong>Especialidad:</strong></label>
+                                                <select name="especialidad" id="especialidad" class="form-select" required>
+              <option value="">Seleccione una opción</option>
+              <option value="Odontología General">Odontología General</option>
+              <option value="Ortodoncia">Ortodoncia</option>
+              <option value="Cirugía de tercer molares">Cirugía de tercer molares</option>
+              <option value="Restauración Estética">Restauración Estética</option>
+              <option value="Odontopediatría">Odontopediatría</option>
+              <option value="Exodoncia">Exodoncia</option>
+              <option value="Endodoncia">Endodoncia</option>
+              <option value="Profilaxis">Profilaxis</option>
+              <option value="Aclaramiento Dental">Aclaramiento Dental</option>
+              <option value="Prótesis fijas y removibles">Prótesis fijas y removibles</option>
+            </select>
+                                            </div>
+
+                                            <div class="text-end">
+                                                <button type="submit" class="btn btn-success">Agendar</button>
+                                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <script>
+            $(document).ready(function() {
+                $('#calendar').fullCalendar({
+                    locale: 'es',
+                    events: '/obtener-citas-json',
+                    dayClick: function(date) {
+                        const fecha = date.format('YYYY-MM-DD');
+                        const hoy = moment().format('YYYY-MM-DD');
+                        const horaActual = moment();
+
+                        $('#modalCitasLabel').text('Disponibilidad para el ' + fecha);
+
+                        const horas = [];
+                        for (let i = 0; i < 20; i++) {
+                            const h = 8 + Math.floor(i / 2);
+                            const m = (i % 2) * 30;
+                            horas.push(moment({
+                                hour: h,
+                                minute: m
+                            }));
+                        }
+
+                        const container = $('#botones-citas-dia');
+                        container.empty();
+
+                        // Si la fecha es anterior a hoy, no mostrar nada
+                        if (fecha < hoy) {
+                            container.append(`<div class="text-center text-danger">No se puede agendar en fechas pasadas.</div>`);
+                            new bootstrap.Modal(document.getElementById('modalCitas')).show();
+                            return;
+                        }
+
+                        $.get(`/citas-por-dia?fecha=${fecha}`, function(citas) {
+                            horas.forEach(horaMoment => {
+                                const hora = horaMoment.format('HH:mm');
+                                const isPastToday = fecha === hoy && horaMoment.isBefore(horaActual);
+
+                                const ocupado = citas.find(c => moment(c.hora, 'HH:mm:ss').format('HH:mm') === hora);
+
+                                let btnClass = 'btn ';
+                                let label = '';
+                                let disabled = false;
+
+                                if (ocupado) {
+                                    btnClass += 'btn-danger';
+                                    label = 'Ocupado';
+                                    disabled = true;
+                                } else if (isPastToday) {
+                                    btnClass += 'btn-secondary';
+                                    label = 'Pasado';
+                                    disabled = true;
+                                } else {
+                                    btnClass += 'libre';
+                                    label = 'Disponible';
+                                }
+
+                                container.append(`<button class="${btnClass}" ${disabled ? 'disabled' : ''} data-fecha="${fecha}" data-hora="${hora}">
+                            ${hora} - ${label}
+                        </button>`);
+                            });
+
+                            new bootstrap.Modal(document.getElementById('modalCitas')).show();
+                        });
+                    }
+                });
+
+                $(document).on('click', '.btn.libre', function() {
+                    $('#inputFecha').val($(this).data('fecha'));
+                    $('#inputHora').val($(this).data('hora'));
+                    $('#fechaSeleccionada').text($(this).data('fecha'));
+                    $('#horaSeleccionada').text($(this).data('hora'));
+                    $('#inputTipoDocumento').val('<%= usuario.tipo_id %>'); // Asignar tipo de documento al campo oculto
+                    bootstrap.Modal.getInstance(document.getElementById('modalCitas')).hide();
+                    new bootstrap.Modal(document.getElementById('modalConfirmar')).show();
+                });
+
+                document.getElementById("formConfirmarCita").addEventListener("submit", function(e) {
+                    e.preventDefault();
+                    const form = e.target;
+                    const formData = new FormData(form);
+                    const data = Object.fromEntries(formData.entries());
+
+                    fetch("/agendar-cita-modal", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify(data),
+                        })
+                        .then(res => res.json())
+                        .then(result => {
+                            if (result.success) {
+                                document.getElementById("mensajeExito").textContent = result.message;
+                                document.getElementById("mensajeExito").classList.remove("d-none");
+                                document.getElementById("mensajeError").classList.add("d-none");
+
+                                $('#calendar').fullCalendar('refetchEvents');
+                                setTimeout(() => {
+                                    bootstrap.Modal.getInstance(document.getElementById('modalConfirmar')).hide();
+                                    document.getElementById("formConfirmarCita").reset();
+                                    document.getElementById("mensajeExito").classList.add("d-none");
+                                }, 3000);
+
+                            } else {
+                                document.getElementById("mensajeError").textContent = result.message;
+                                document.getElementById("mensajeError").classList.remove("d-none");
+                                document.getElementById("mensajeExito").classList.add("d-none");
+                            }
+                        })
+                        .catch(error => {
+                            document.getElementById("mensajeError").textContent = "Ocurrió un error al agendar.";
+                            document.getElementById("mensajeError").classList.remove("d-none");
+                            document.getElementById("mensajeExito").classList.add("d-none");
+                            console.error("Error:", error);
+                        });
+                });
+
+            });
+        </script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Agendar Cita - Consultorio Odontológico</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        
+        .fadeIn {
+            opacity: 0;
+            animation: fadeIn 0.5s ease-in-out forwards;
+        }
+        
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+        
+        .form-control,
+        .form-select {
+            margin-bottom: 1rem;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+        }
+        
+        .form-label {
+            font-weight: bold;
+        }
+        
+        .search-button {
+            background-color: #0d6efd;
+            border: none;
+            color: white;
+            padding: 0.375rem 0.5rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s ease;
+            font-size: 1.1rem;
+            width: 38px;
+            height: 38px;
+        }
+        
+        .search-button:hover {
+            background-color: #0b5ed7;
+        }
+    </style>
+</head>
+
+<body>
+    <%- include('HOMEheader') %>
+
+        <div class="container my-5 fadeIn">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="m-0 text-center flex-grow-1">Agendar Cita</h1>
+                <a href="/citas-agendadas" class="btn btn-outline-primary">
+                    <i class="bi bi-calendar-check"></i> Ver mis citas
+                </a>
+            </div>
+
+            <% if (message) { %>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        Swal.fire({
+                            icon: '<%= message.type %>',
+                            title: '<%= message.type === "success" ? "¡Éxito!" : "Atención" %>',
+                            text: '<%= message.text %>',
+                            confirmButtonColor: '#0d6efd',
+                            confirmButtonText: 'Aceptar'
+                        });
+                    });
+                </script>
+                <% } %>
+
+                    <form id="appointment-form" action="/agendar-cita" method="POST">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label for="tipoocumento" class="form-label">Tipo de Documento</label>
+                                <select id="tipoDocumento" name="tipoDocumento" class="form-select" required>
+            <option value="nacional" selected>Cédula Nacional</option>
+            <option value="extranjero">Pasaporte</option>
+          </select>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label for="cedula" class="form-label">Número</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="cedula" name="cedula" required value="<%= formData?.cedula || '' %>" />
+                                    <button class="search-button" type="button" id="search-button" aria-label="Buscar">
+              <i class="bi bi-search"></i>
+            </button>
+                                </div>
+                                <div id="cedula-error" class="text-danger"></div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="nombre" class="form-label">Nombre Completo</label>
+                                <input type="text" class="form-control" id="nombre" name="nombre" readonly value="<%= formData?.nombre || '' %>" />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="fecha" class="form-label">Fecha de la Cita</label>
+                                    <input type="date" class="form-control" id="fecha" name="fecha" required min="<%= new Date().toISOString().split('T')[0] %>" value="<%= formData?.fecha || '' %>">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="hora" class="form-label">Hora de la Cita</label>
+                                    <input type="time" class="form-control" id="hora" name="hora" required min="08:00" max="17:00" step="1800" value="<%= formData?.hora || '' %>">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="especialidad" class="form-label">Especialidad</label>
+                            <select class="form-select" id="especialidad" name="especialidad" required>
+          <option value="">Seleccione el servicio</option>
+          <% const especialidades = [
+            "Odontología General", "Ortodoncia", "Cirugía de tercer molares", "Restauración Estética",
+            "Odontopediatria", "Exodoncia", "Endodoncia", "Profilaxis",
+            "Aclaramiento Dental", "Prótesis fijas y removibles"
+          ]; %>
+          <% especialidades.forEach(e => { %>
+            <option value="<%= e %>" <%= formData?.especialidad === e ? 'selected' : '' %>><%= e %></option>
+          <% }); %>
+        </select>
+
+                            <div class="mt-2 p-2 bg-light border border-danger text-danger rounded">
+                                Nota: No olvide actualizar su perfil para poder agendar su cita.
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <a href="/EditPerfil" class="btn btn-secondary">
+                                <i class="bi bi-pencil-square"></i> Editar Perfil
+                            </a>
+                            <button type="submit" class="btn btn-primary">Agendar Cita</button>
+                            <a href="/obtener-citas" class="btn btn-outline-secondary ms-3">
+                                <i class="bi bi-calendar-event"></i> Calendario
+                            </a>
+                        </div>
+                    </form>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+
+        <script>
+            const cedulaInput = document.getElementById('cedula');
+            const tipoDocumento = document.getElementById('tipoDocumento');
+            const nombreInput = document.getElementById('nombre');
+            const cedulaErrorDiv = document.getElementById('cedula-error');
+            const searchButton = document.getElementById('search-button');
+            const fechaInput = document.getElementById('fecha');
+            const horaInput = document.getElementById('hora');
+
+            searchButton.addEventListener('click', async() => {
+                const cedula = cedulaInput.value.trim();
+                const tipo = tipoDocumento.value;
+
+                if ((tipo === 'Cédula' && cedula.length < 10) || (tipo === 'pasaporte' && cedula.length < 6)) {
+                    cedulaErrorDiv.textContent = tipo === 'Cédula' ?
+                        'La cédula debe tener al menos 10 dígitos' :
+                        'El pasaporte debe tener al menos 6 caracteres';
+                    nombreInput.value = '';
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/obtener-datos-paciente?cedula=${cedula}&tipoDocumento=${tipo}`);
+                    if (!response.ok) throw new Error();
+
+                    const data = await response.json();
+                    nombreInput.value = data.nombre;
+                    cedulaErrorDiv.textContent = '';
+                } catch (error) {
+                    nombreInput.value = '';
+                    cedulaErrorDiv.textContent = 'Paciente no encontrado';
+                }
+            });
+
+            document.getElementById('appointment-form').addEventListener('submit', function(event) {
+                const fechaInputValue = fechaInput.value;
+                const horaInputValue = horaInput.value;
+
+                if (!fechaInputValue || !horaInputValue) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Campos incompletos',
+                        text: 'Debe seleccionar una fecha y una hora válida.',
+                        confirmButtonText: 'Aceptar'
+                    });
+                    event.preventDefault();
+                    return;
+                }
+
+                const fechaSeleccionada = new Date(`${fechaInputValue}T${horaInputValue}`);
+                const ahora = new Date();
+
+                if (fechaSeleccionada < ahora) {
+                    event.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Fecha y hora inválida',
+                        text: 'No puedes agendar una cita en el pasado.',
+                        confirmButtonText: 'Aceptar'
+                    });
+                }
+            });
+
+            window.addEventListener('load', () => {
+                const fadeIn = document.querySelector('.fadeIn');
+                if (fadeIn) fadeIn.style.opacity = '1';
+            });
+        </script>
+</body>
+
+</html>

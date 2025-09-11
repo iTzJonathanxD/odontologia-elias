@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Historial Clínico Completo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f8fb;
+            padding: 30px;
+        }
+        
+        .header-logo {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .header-logo img {
+            max-height: 80px;
+        }
+        
+        .doctor-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #004085;
+            margin-top: 10px;
+        }
+        
+        .btn-print {
+            margin-bottom: 20px;
+        }
+        
+        @media print {
+            .btn-print {
+                display: none;
+            }
+            body {
+                background: white !important;
+                color: black;
+            }
+        }
+        
+        .perfil-label {
+            font-weight: bold;
+            color: #004085;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        
+        table th,
+        table td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            vertical-align: top;
+        }
+        
+        table thead {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .fila-principal {
+            background-color: #e6f0ff;
+        }
+        /* ======= ODONTOGRAMA ======= */
+        
+        .odontograma-container {
+            margin-top: 40px;
+            text-align: center;
+        }
+        
+        .odontograma-zona {
+            margin-bottom: 20px;
+        }
+        
+        .zona-titulo {
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        
+        .zona-dientes {
+            display: grid;
+            grid-template-columns: repeat(8, 45px);
+            gap: 8px;
+            justify-content: center;
+        }
+        
+        .pieza {
+            background-color: #ccc;
+            border: 2px solid #999;
+            border-radius: 8px;
+            width: 45px;
+            height: 60px;
+            font-size: 11px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 4px 2px;
+            position: relative;
+        }
+        
+        .procedimientos-iconos-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            justify-content: center;
+            min-height: 14px;
+            margin-bottom: 2px;
+            line-height: 1;
+        }
+        
+        .procedimiento-icono {
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .pieza-icono {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 2px;
+        }
+        
+        .pieza-icono svg {
+            width: 22px;
+            height: 22px;
+            fill: white;
+        }
+        
+        .pieza-number {
+            font-size: 10px;
+            line-height: 1;
+            margin-top: auto;
+        }
+        /* ======= COLORES DE PROCEDIMIENTOS (según imagen) ======= */
+        
+        .procedimiento-icono.sellante-necesario {
+            color: red;
+        }
+        
+        .procedimiento-icono.sellante-realizado {
+            color: blue;
+        }
+        
+        .procedimiento-icono.endodoncia {
+            color: red;
+        }
+        
+        .procedimiento-icono.corona {
+            color: red;
+        }
+        
+        .procedimiento-icono.protesis-fija {
+            color: red;
+        }
+        
+        .procedimiento-icono.protesis-removible {
+            color: red;
+        }
+        
+        .procedimiento-icono.protesis-total {
+            color: red;
+        }
+        
+        .procedimiento-icono.perdida-otra {
+            color: red;
+        }
+        
+        .procedimiento-icono.extraccion-indicada {
+            color: red;
+        }
+        
+        .procedimiento-icono.perdida-caries {
+            color: blue;
+        }
+        
+        .procedimiento-icono.obturado {
+            color: blue;
+        }
+        
+        .procedimiento-icono.caries {
+            color: red;
+        }
+        
+        @media print {
+            .row {
+                display: grid !important;
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 10px;
+            }
+            .col-md-4 {
+                /* Quita el ancho automático que da Bootstrap para que no colisione con grid */
+                flex: none !important;
+                max-width: none !important;
+            }
+        }
+    </style>
+
+
+</head>
+
+<body>
+    <button class="btn btn-outline-primary btn-print" onclick="window.print()">🖨️ Imprimir Historial Completo</button>
+
+    <div class="header-logo">
+        <img src="/images/Logo.jpg" alt="Logo Consultorio" />
+        <div class="doctor-name">Dra. Joseline Delgado<br>Odontología Especializada</div>
+    </div>
+
+    <h3 class="text-center text-primary mb-4 border-bottom pb-2">
+        Historial Clínico Completo - (N° HC:
+        <%= paciente.cedula || paciente.pasaporte || 'No especificado' %>)
+    </h3>
+
+    <section class="perfil-paciente mb-4">
+        <div class="container">
+            <div class="row">
+                <% const principal = historiales.find(h => h.seguimiento_de === null); %>
+                    <% const datosPaciente = [
+                    ['Nombre', paciente.nombre],
+                    ['Fecha de nacimiento', paciente.fecha_nacimiento ? new Date(paciente.fecha_nacimiento).toLocaleDateString('es-EC') : 'N/A'],
+                    ['Ciudad', paciente.ciudad || 'N/A'],
+                    ['Documento', paciente.cedula || paciente.pasaporte || 'No especificado'],
+                    ['Edad', paciente.edad || 'N/A'],
+                    ['Barrio', paciente.barrio || 'N/A'],
+                    ['Sexo', paciente.sexo || 'N/A'],
+                    ['Celular', paciente.celular || 'N/A'],
+                    ['Ocupación', paciente.ocupacion || 'N/A'],
+                    ['Grupo Sanguíneo', principal?.grupo_sanguineo || 'N/A'],
+                    ['Ant. Personales', principal?.antecedentes_personales || 'N/A'],
+                    ['Medic. Actuales', principal?.medicamentos_actuales || 'N/A'],
+                    ['Alergias', principal?.alergias || 'N/A'],
+                    ['Ant. Familiares', principal?.antecedentes_familiares || 'N/A'],
+                    ['Enf. Contagiosas', principal?.enfermedades_contagiosas_recientes || 'N/A'],
+                    ['Enf. Crónicas', principal?.enfermedades_cronicas || 'N/A'],
+                    ['Cirugías', principal?.cirugias || 'N/A'],
+                    ['Alcohol', principal?.alcohol ? 'Sí' : 'No'],
+                    ['Fuma', principal?.fuma ? 'Sí' : 'No']
+                ]; %>
+
+                        <% datosPaciente.forEach(([label, valor], index) => { %>
+                            <div class="col-md-4 mb-2">
+                                <strong><%= label %>:</strong>
+                                <%= valor %>
+                            </div>
+                            <% }) %>
+            </div>
+        </div>
+    </section>
+
+    <table class="mb-5">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Diagnóstico</th>
+                <th>Tratamientos</th>
+                <th>Medicamentos</th>
+                <th>Prescripción</th>
+                <th>Observaciones</th>
+                <th>Piezas Tratadas</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% historiales.forEach(h => { %>
+                <tr class="<%= h.seguimiento_de ? '' : 'fila-principal' %>">
+                    <td>
+                        <%= new Date(h.created_at).toLocaleDateString('es-EC') %>
+                    </td>
+                    <td><strong>Código:</strong>
+                        <%= h.codigo_diagnostico || '—' %><br><strong>Nombre:</strong>
+                            <%= h.nombre_diagnostico || '—' %>
+                    </td>
+                    <td>
+                        <%= h.tratamientos || '—' %>
+                    </td>
+                    <td>
+                        <%= h.medicamentos || '—' %>
+                    </td>
+                    <td>
+                        <%= h.prescripcion || '—' %>
+                    </td>
+                    <td>
+                        <%= h.observaciones || '—' %>
+                    </td>
+                    <td>
+                        <ul style="padding-left: 18px; margin: 0;">
+                            <% let piezas = [];
+                            try {
+                                const datos = typeof h.odontograma_json === 'string' ? JSON.parse(h.odontograma_json) : h.odontograma_json;
+                                if (Array.isArray(datos)) {
+                                    datos.forEach(p => {
+                                        piezas.push(p.numero + ' - ' + p.procedimiento + (p.cara ? ' (' + p.cara + ')' : ''));
+                                    });
+                                } else {
+                                    piezas.push('—');
+                                }
+                            } catch {
+                                piezas.push('—');
+                            }
+                            piezas.forEach(pieza => { %>
+                                <li>
+                                    <%= pieza %>
+                                </li>
+                                <% }) %>
+                        </ul>
+                    </td>
+                </tr>
+                <% }) %>
+        </tbody>
+    </table>
+
+    <h4 class="text-center mt-5">Odontograma del Paciente</h4>
+    <div class="odontograma-container">
+        <% 
+        // Definir zonas de dientes
+        const zonas = {
+            'adulto-superior': [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28],
+            'adulto-inferior': [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38],
+            'nino-superior': [55, 54, 53, 52, 51, 61, 62, 63, 64, 65],
+            'nino-inferior': [85, 84, 83, 82, 81, 71, 72, 73, 74, 75]
+        };
+
+        // Definir símbolos por procedimiento
+        const simbolos = {
+            "Sellante necesario": { clase: "sellante-necesario", icono: "*" },
+            "Sellante realizado": { clase: "sellante-realizado", icono: "*" },
+            "Caries": { clase: "caries", icono: "○" },
+            "Obturado": { clase: "obturado", icono: "●" },
+            "Endodoncia": { clase: "endodoncia", icono: "△" },
+            "Corona": { clase: "corona", icono: "▭" },
+            "Prótesis fija": { clase: "protesis-fija", icono: "=" },
+            "Prótesis removible": { clase: "protesis-removible", icono: "≡" },
+            "Prótesis total": { clase: "protesis-total", icono: "≡≡" },
+            "Pérdida (otra causa)": { clase: "perdida-otra", icono: "⊗" },
+            "Extracción indicada": { clase: "extraccion-indicada", icono: "X" },
+            "Pérdida por caries": { clase: "perdida-caries", icono: "X" }
+        };
+
+        // Decidir qué zonas mostrar según edad
+        const esNino = parseInt(paciente.edad) <= 12;
+        const zonasAMostrar = esNino ? ['nino-superior', 'nino-inferior'] : ['adulto-superior', 'adulto-inferior'];
+
+        // Unificar piezas y agrupar procedimientos en cada pieza
+        const piezasUnificadas = [];
+        historiales.forEach(h => {
+            const piezas = h.odontograma_json || [];
+            piezas.forEach(p => {
+                let piezaExistente = piezasUnificadas.find(x => parseInt(x.numero) === parseInt(p.numero));
+                if (!piezaExistente) {
+                    piezasUnificadas.push({
+                        numero: p.numero,
+                        procedimientos: [{
+                            procedimiento: p.procedimiento,
+                            cara: p.cara,
+                            icono: p.icono
+                        }]
+                    });
+                } else {
+                    piezaExistente.procedimientos.push({
+                        procedimiento: p.procedimiento,
+                        cara: p.cara,
+                        icono: p.icono
+                    });
+                }
+            });
+        });
+        %>
+
+            <% zonasAMostrar.forEach(zona => { %>
+                <div class="odontograma-zona">
+                    <div class="zona-titulo">
+                        <%= zona.includes('nino') ? zona.replace('nino', 'NIÑO').replace('-', ' ') : zona.replace('-', ' ').toUpperCase() %>
+                    </div>
+                    <div class="zona-dientes">
+                        <% zonas[zona].forEach(numero => { 
+                        const pieza = piezasUnificadas.find(p => parseInt(p.numero) === numero);
+                    %>
+                            <div class="pieza" title="<%= pieza ? pieza.procedimientos.map(pr => pr.procedimiento + (pr.cara ? ' (' + pr.cara + ')' : '')).join(', ') : '' %>">
+                                <% if (pieza) { %>
+                                    <div class="procedimientos-iconos-container">
+                                        <% pieza.procedimientos.forEach(pr => {
+                const simbolo = simbolos[pr.procedimiento?.trim()] || null;
+            %>
+                                            <div class="procedimiento-icono <%= simbolo?.clase || '' %>" title="<%= pr.procedimiento %>">
+                                                <%= simbolo?.icono || '' %>
+                                            </div>
+                                            <% }) %>
+                                    </div>
+                                    <% } else { %>
+                                        <div class="procedimientos-iconos-container"></div>
+                                        <% } %>
+
+                                            <div class="pieza-icono">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 17">
+            <path d="M3.654 0c-1.296 0-2.323 1.114-2.323 2.49 0 .991.328 1.94.816 2.623.485.678 1.146 1.18 1.758 1.586-.008.165-.015.332-.015.502 0 2.908.548 5.769 1.226 7.889.084.26.344.42.616.42s.532-.161.616-.42c.678-2.12 1.226-4.981 1.226-7.889 0-.17-.007-.337-.015-.502.612-.406 1.273-.908 1.758-1.586.488-.684.816-1.632.816-2.623C13.669 1.114 12.641 0 11.346 0c-.694 0-1.32.331-1.788.869A3.278 3.278 0 0 0 8 1.6a3.278 3.278 0 0 0-.558-.731C6.974.33 6.348 0 5.654 0z"/>
+        </svg>
+                                            </div>
+
+                                            <div class="pieza-number">
+                                                <%= numero %>
+                                            </div>
+                            </div>
+
+
+                            <% }) %>
+                    </div>
+                </div>
+                <% }) %>
+
+    </div>
+</body>
+
+</html>

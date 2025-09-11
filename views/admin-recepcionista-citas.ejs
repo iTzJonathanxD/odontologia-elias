@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Citas Agendadas - Recepcionista</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css" rel="stylesheet" />
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        
+        .section-title {
+            color: #0d6efd;
+        }
+        
+        .card {
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .table thead {
+            background-color: #0d6efd;
+            color: white;
+        }
+        
+        .btn-icon {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .navbar-brand span:first-child {
+            font-weight: bold;
+            color: #ffffff;
+        }
+        
+        .navbar-brand span:last-child {
+            font-weight: bold;
+            color: #ffffff;
+            font-size: 15px;
+        }
+        
+        .nav-link {
+            font-size: 17px;
+            font-weight: bold;
+            color: #ffffff !important;
+        }
+        
+        .nav-link i {
+            margin-left: 5px;
+        }
+        
+        .navbar-nav {
+            margin-left: auto;
+            align-items: center;
+        }
+        
+        .dropdown-menu {
+            background-color: #f8f9fa;
+        }
+        
+        .dropdown-menu a {
+            color: #000;
+        }
+        
+        .dropdown-menu a:hover {
+            background-color: #e9ecef;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #3d98dd;">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="/admin-home">
+                <img src="/images/logo.png" alt="Logo" class="me-3" style="max-height: 80px;">
+                <div>
+                    <span>Dra. Joseline Delgado</span><br>
+                    <span>Odontología Especializada</span>
+                </div>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center" href="/admin-recepcionista">
+                            <span>Inicio</span>
+                            <i class="bi bi-person-circle ms-2"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-fill"></i>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="/admin-login">Cerrar Sesión</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <!-- Contenido -->
+    <div class="container my-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="section-title">📅 Citas Agendadas</h2>
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalAgregarCita">
+        <i class="bi bi-calendar-plus"></i> Agendar Nueva Cita
+      </button>
+
+        </div>
+        <input type="text" class="form-control mb-2 mb-md-0" id="inputBusqueda" placeholder="🔎 Buscar por Cédula o Nombre" />
+        <br>
+
+        <% if (!citas || citas.length === 0) { %>
+            <div class="alert alert-info text-center">No hay citas agendadas.</div>
+            <% } else { %>
+                <div class="card p-3">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>N.U.I / PAS</th>
+                                    <th>Nombre</th>
+                                    <th>Fecha</th>
+                                    <th>Hora</th>
+                                    <th>Especialidad</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaCitas">
+                                <% citas.forEach(cita => { %>
+                                    <tr>
+                                        <td>
+                                            <%= cita.cedula %>
+                                        </td>
+                                        <td>
+                                            <%= cita.nombre %>
+                                        </td>
+                                        <td>
+                                            <%= new Date(cita.fecha).toLocaleDateString() %>
+                                        </td>
+                                        <td>
+                                            <%= cita.hora.slice(0, 5) %>
+                                        </td>
+                                        <td>
+                                            <%= cita.especialidad %>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="btn-group">
+                                                <a href="/recepcionista/citas/editar/<%= cita.id %>" class="btn btn-warning btn-sm btn-icon">
+                                                    <i class="bi bi-pencil-square"></i> Editar
+                                                </a>
+                                                <button class="btn btn-danger btn-sm btn-icon" onclick="eliminarCita(<%= cita.id %>)">
+                      <i class="bi bi-trash"></i> Eliminar
+                    </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <% }) %>
+                            </tbody>
+                        </table>
+                        <p id="mensajeSinResultados" class="text-center text-danger mt-3" style="display: none;">
+                            ❌ No se encontraron resultados con esa búsqueda.
+                        </p>
+
+                    </div>
+                </div>
+                <% } %>
+    </div>
+
+    <!-- MODAL AGREGAR CITA -->
+    <div class="modal fade" id="modalAgregarCita" tabindex="-1" aria-labelledby="modalAgregarCitaLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <form class="modal-content" id="formAgregarCita" novalidate>
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="modalAgregarCitaLabel"><i class="bi bi-calendar-plus"></i> Agregar Nueva Cita</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Tipo de documento -->
+                    <div class="mb-3">
+                        <label for="tipo_documento" class="form-label">Tipo de Documento</label>
+                        <select class="form-select" id="tipo_documento" name="tipo_documento" required>
+                        <option value="">Seleccione tipo</option>
+                        <option value="cedula">Cédula</option>
+                        <option value="pasaporte">Pasaporte</option>
+                    </select>
+                        <input type="hidden" id="inputCedulaFinal" name="cedula" />
+                    </div>
+
+                    <!-- Número del documento -->
+                    <div class="mb-3 input-group">
+                        <input type="text" class="form-control" id="inputCedula" placeholder="Número de documento" required />
+                        <button type="button" class="btn btn-outline-secondary" id="btnBuscarCedula" title="Buscar paciente">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    </div>
+
+                    <!-- Nombre del paciente -->
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre</label>
+                        <input type="text" class="form-control" name="nombre" id="inputNombre" readonly required />
+                    </div>
+
+                    <!-- ID del paciente -->
+                    <div class="mb-3">
+                        <label for="usuario_id" class="form-label">ID Usuario</label>
+                        <input type="text" class="form-control" name="usuario_id" id="inputUsuarioId" readonly required />
+                    </div>
+
+                    <!-- Fecha -->
+                    <div class="mb-3">
+                        <label for="fecha" class="form-label">Fecha</label>
+                        <input type="date" class="form-control" name="fecha" id="inputFecha" required />
+                    </div>
+
+                    <!-- Hora -->
+                    <div class="mb-3">
+                        <label for="hora" class="form-label">Hora</label>
+                        <input type="time" class="form-control" name="hora" required />
+                    </div>
+
+                    <!-- Especialidad -->
+                    <div class="mb-3">
+                        <label for="especialidad" class="form-label">Especialidad</label>
+                        <select class="form-select" name="especialidad" required>
+                        <option value="">Seleccione el servicio</option>
+                        <option value="Odontología General">Odontología General</option>
+                        <option value="Ortodoncia">Ortodoncia</option>
+                        <option value="Cirugía de tercer molares">Cirugía de tercer molares</option>
+                        <option value="Restauración Estética">Restauración Estética</option>
+                        <option value="Odontopediatría">Odontopediatría</option>
+                        <option value="Exodoncia">Exodoncia</option>
+                        <option value="Endodoncia">Endodoncia</option>
+                        <option value="Profilaxis">Profilaxis</option>
+                        <option value="Aclaramiento Dental">Aclaramiento Dental</option>
+                        <option value="Prótesis fijas y removibles">Prótesis fijas y removibles</option>
+                    </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Guardar Cita</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL ELIMINAR MENSAJE -->
+    <div class="modal fade" id="modalMensaje" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content bg-light">
+                <div class="modal-body text-center fw-bold" id="mensajeTexto"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Función para mostrar mensajes flotantes
+        function mostrarMensaje(texto, tipo = 'success') {
+            const mensajeModal = new bootstrap.Modal(document.getElementById('modalMensaje'));
+            const mensajeTexto = document.getElementById('mensajeTexto');
+            mensajeTexto.textContent = texto;
+            mensajeTexto.className = 'text-' + (tipo === 'success' ? 'success' : 'danger');
+            mensajeModal.show();
+            setTimeout(() => mensajeModal.hide(), 3000);
+        }
+
+        // Función para eliminar cita
+        async function eliminarCita(id) {
+            if (!confirm('¿Está seguro de eliminar esta cita?')) return;
+            try {
+                const res = await fetch(`/recepcionista/citas/eliminar/${id}`, {
+                    method: 'DELETE'
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    mostrarMensaje(result.success || 'Cita eliminada');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    mostrarMensaje(result.error || 'Error al eliminar', 'danger');
+                }
+            } catch (err) {
+                mostrarMensaje('Error al conectar con el servidor', 'danger');
+            }
+        }
+    </script>
+
+
+    <!-- MODAL ALERTA -->
+    <div class="modal fade " id="modalMensaje " tabindex="-1 " aria-hidden="true ">
+        <div class="modal-dialog ">
+            <div class="modal-content bg-light ">
+                <div class="modal-body text-center fw-bold " id="mensajeTexto "></div>
+            </div>
+        </div>
+    </div>
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js "></script>
+    <script>
+        // Mostrar mensaje flotante
+        function mostrarMensaje(texto, tipo = 'success') {
+            const mensajeModal = new bootstrap.Modal(document.getElementById('modalMensaje'));
+            const mensajeTexto = document.getElementById('mensajeTexto');
+            mensajeTexto.textContent = texto;
+            mensajeTexto.className = 'text-' + (tipo === 'success' ? 'success' : 'danger');
+            mensajeModal.show();
+            setTimeout(() => mensajeModal.hide(), 3000);
+        }
+
+        // Fecha mínima actual
+        const inputFecha = document.getElementById('inputFecha');
+        const hoy = new Date().toISOString().split('T')[0];
+        inputFecha.min = hoy;
+
+        // Validar solo al salir del campo o cuando esté completa
+        inputFecha.addEventListener('blur', () => {
+            const valor = inputFecha.value;
+            if (valor && valor < hoy) {
+                mostrarMensaje('Seleccione una fecha actual o futura', 'danger');
+                inputFecha.value = '';
+            }
+        });
+
+
+        let pacienteEncontrado = false;
+
+        document.getElementById('btnBuscarCedula').addEventListener('click', async() => {
+            const tipo = document.getElementById('tipo_documento').value;
+            const numero = document.getElementById('inputCedula').value.trim();
+
+            if (!tipo || !numero) {
+                mostrarMensaje('Seleccione tipo de documento y número válido.', 'danger');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/buscar-usuario?tipo=${tipo}&numero=${numero}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    mostrarMensaje(data.error, 'danger');
+                    pacienteEncontrado = false;
+                    document.getElementById('inputNombre').value = '';
+                    document.getElementById('inputUsuarioId').value = '';
+                    document.getElementById('inputCedulaFinal').value = '';
+                } else {
+                    pacienteEncontrado = true;
+                    document.getElementById('inputNombre').value = data.nombre;
+                    document.getElementById('inputUsuarioId').value = data.id;
+                    document.getElementById('inputCedulaFinal').value = numero;
+                }
+            } catch (error) {
+                console.error('Error al conectar con el servidor:', error);
+                mostrarMensaje('Error al conectar con el servidor', 'danger');
+                pacienteEncontrado = false;
+            }
+        });
+
+        // Validación antes de guardar cita
+        document.getElementById('formAgregarCita').addEventListener('submit', function(e) {
+            if (!pacienteEncontrado) {
+                e.preventDefault();
+                mostrarMensaje('Debe buscar y seleccionar un paciente válido antes de guardar la cita.', 'danger');
+            }
+        });
+
+
+        // Guardar cita
+        document.getElementById('formAgregarCita').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            if (!this.checkValidity()) return this.reportValidity();
+
+            const formData = new FormData(this);
+            const data = {};
+            formData.forEach((value, key) => data[key] = value);
+
+            try {
+                const response = await fetch('/recepcionista/citas/agregar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+
+                if (!response.ok) {
+                    mostrarMensaje(result.error || 'Error al guardar cita', 'danger');
+                } else {
+                    mostrarMensaje(result.success || 'Cita agendada correctamente');
+                    this.reset();
+                    bootstrap.Modal.getInstance(document.getElementById('modalAgregarCita')).hide();
+                    setTimeout(() => location.reload(), 2000);
+                }
+            } catch (error) {
+                mostrarMensaje('Error al conectar con el servidor', 'danger');
+            }
+        });
+        document.addEventListener("DOMContentLoaded", function() {
+            const inputBusqueda = document.getElementById('inputBusqueda');
+            const tabla = document.getElementById('tablaCitas');
+
+            if (!inputBusqueda || !tabla) return;
+
+            inputBusqueda.addEventListener('keyup', function() {
+                const filtro = this.value.toLowerCase().trim();
+                const filas = tabla.getElementsByTagName('tr');
+
+                let coincidencias = 0;
+
+                for (let i = 0; i < filas.length; i++) {
+                    const celdas = filas[i].getElementsByTagName('td');
+                    const cedula = celdas[0] ? celdas[0].textContent.toLowerCase() : '';
+                    const nombre = celdas[1] ? celdas[1].textContent.toLowerCase() : '';
+
+                    if (cedula.includes(filtro) || nombre.includes(filtro)) {
+                        filas[i].style.display = '';
+                        coincidencias++;
+                    } else {
+                        filas[i].style.display = 'none';
+                    }
+                }
+
+                // Mostrar mensaje si no hay coincidencias
+                const mensajeVacio = document.getElementById('mensajeSinResultados');
+                if (mensajeVacio) {
+                    mensajeVacio.style.display = coincidencias === 0 ? 'block' : 'none';
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

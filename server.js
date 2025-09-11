@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
 const { Client } = require('pg');
 const moment = require('moment');
 const crypto = require('crypto');
@@ -214,16 +215,60 @@ async function validarCorreoMX(correo) {
 // Configuración de sesión
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || 'mi_secreto_seguro_para_produccion',
+    secret:
+      process.env.SESSION_SECRET ||
+      'mi_secreto_seguro_para_produccion_odontologia_2024',
     resave: false,
     saveUninitialized: false, // Cambio a false para mejor seguridad
+    name: 'sessionId', // Nombre personalizado para la cookie de sesión
     cookie: {
-      secure: process.env.NODE_ENV === 'production', // Solo HTTPS en producción
+      secure: false, // Cambiado a false para desarrollo local
       httpOnly: true, // Previene acceso desde JavaScript
       maxAge: 24 * 60 * 60 * 1000, // 24 horas
+      sameSite: 'lax', // Protección CSRF
     },
   })
 );
+
+// Middleware de debug para sesiones
+app.use((req, res, next) => {
+  if (
+    req.path !== '/obtener-citas-json' &&
+    !req.path.includes('.css') &&
+    !req.path.includes('.js') &&
+    !req.path.includes('.png') &&
+    !req.path.includes('.jpg')
+  ) {
+    console.log('🔍 [DEBUG SESSION] Request:', {
+      path: req.path,
+      method: req.method,
+      sessionId: req.session.id,
+      hasUser: !!req.session.user,
+      userId: req.session.user ? req.session.user.id : null,
+    });
+  }
+  next();
+});
+
+// Middleware de autenticación
+function requireAuth(req, res, next) {
+  if (!req.session.user) {
+    return res.redirect('/login');
+  }
+  next();
+}
+
+// Middleware para verificar conexión a BD
+function requireDB(req, res, next) {
+  if (!client._connected) {
+    return res.status(503).render('error', {
+      message:
+        'Servicio temporalmente no disponible. Base de datos desconectada.',
+      error: { status: 503, stack: '' },
+    });
+  }
+  next();
+}
 
 // Rutas
 app.get('/', (req, res) => {
@@ -246,9 +291,17 @@ const transporter = nodemailer.createTransport({
 
 // Ruta para agendar cita
 app.post('/agendar-cita', async (req, res) => {
+  console.log('🔍 [DEBUG AGENDAR-CITA] Iniciando proceso de agendar cita');
+  console.log('🔍 [DEBUG AGENDAR-CITA] Session data:', {
+    hasUser: !!req.session.user,
+    userId: req.session.user ? req.session.user.id : null,
+    sessionId: req.session.id,
+  });
+
   const { cedula, tipoDocumento, fecha, hora, especialidad } = req.body;
 
   if (!req.session.user) {
+    console.log('❌ [DEBUG AGENDAR-CITA] Sin sesión de usuario');
     return res.render('agendar-cita', {
       message: {
         type: 'danger',
@@ -257,6 +310,8 @@ app.post('/agendar-cita', async (req, res) => {
       formData: req.body,
     });
   }
+
+  console.log('✅ [DEBUG AGENDAR-CITA] Usuario autenticado, procesando cita');
 
   try {
     const ahora = new Date();
@@ -932,10 +987,24 @@ app.post('/editar-cita/:id', async (req, res) => {
 });
 
 app.get('/obtener-citas', async (req, res) => {
+  console.log('🔍 [DEBUG OBTENER-CITAS] Accediendo a /obtener-citas');
+  console.log('🔍 [DEBUG OBTENER-CITAS] Session ID:', req.session.id);
+  console.log('🔍 [DEBUG OBTENER-CITAS] Session data:', {
+    hasUser: !!req.session.user,
+    userId: req.session.user ? req.session.user.id : null,
+    userName: req.session.user ? req.session.user.nombre : null,
+  });
+
   if (!req.session.user) {
+    console.log(
+      '❌ [DEBUG OBTENER-CITAS] Sin sesión de usuario, redirigiendo a login'
+    );
     return res.redirect('/login');
   }
 
+  console.log(
+    '✅ [DEBUG OBTENER-CITAS] Usuario autenticado, renderizando página'
+  );
   res.render('obtener-citas', {
     usuario: req.session.user, // ✅ Esto hace que <%= usuario.nombre %> funcione
   });
@@ -985,38 +1054,52 @@ app.get('/citas-por-dia', async (req, res) => {
   }
 });
 
-app.get('/obtener-citas', (req, res) => {
-  res.render('obtener-citas'); // Solo renderiza HTML
-});
-
 app.get('/register', (req, res) => {
   res.render('register', { success: null, error: null });
 });
 
 // Ruta register ajustada con validación MX
 app.post('/register', async (req, res) => {
+  console.log('🔍 [DEBUG REGISTER] Iniciando proceso de registro');
+  console.log('🔍 [DEBUG REGISTER] Datos recibidos:', {
+    nombre: req.body.nombre,
+    correo: req.body.correo,
+    tipo_id: req.body.tipo_id,
+    cedula: req.body.cedula,
+    fecha_nacimiento: req.body.fecha_nacimiento,
+    passwordLength: req.body.password ? req.body.password.length : 0,
+  });
+
   const { nombre, correo, password, tipo_id, cedula, fecha_nacimiento } =
     req.body;
 
   // Validación básica del correo
+  console.log('🔍 [DEBUG REGISTER] Validando formato de correo...');
   const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   if (!emailPattern.test(correo)) {
+    console.log('❌ [DEBUG REGISTER] Formato de correo inválido:', correo);
     return res.render('register', {
       success: null,
       error: 'Por favor, ingresa un correo electrónico válido.',
     });
   }
+  console.log('✅ [DEBUG REGISTER] Formato de correo válido');
 
+  console.log('🔍 [DEBUG REGISTER] Validando dominio MX...');
   const dominioValido = await validarCorreoMX(correo);
   if (!dominioValido) {
+    console.log('❌ [DEBUG REGISTER] Dominio MX inválido para:', correo);
     return res.render('register', {
       success: null,
       error: 'El dominio del correo no tiene un servidor válido.',
     });
   }
+  console.log('✅ [DEBUG REGISTER] Dominio MX válido');
 
   // Validar tipo y número de documento
+  console.log('🔍 [DEBUG REGISTER] Validando documento...');
   if (!tipo_id || !cedula) {
+    console.log('❌ [DEBUG REGISTER] Falta tipo_id o cedula');
     return res.render('register', {
       success: null,
       error: 'Debes seleccionar tipo de identificación y número.',
@@ -1024,6 +1107,7 @@ app.post('/register', async (req, res) => {
   }
 
   if (tipo_id === 'nacional' && !/^\d{10}$/.test(cedula)) {
+    console.log('❌ [DEBUG REGISTER] Cédula nacional inválida:', cedula);
     return res.render('register', {
       success: null,
       error: 'La cédula nacional debe tener 10 dígitos numéricos.',
@@ -1031,34 +1115,52 @@ app.post('/register', async (req, res) => {
   }
 
   if (tipo_id === 'extranjero' && !/^[A-Za-z0-9]{5,20}$/.test(cedula)) {
+    console.log('❌ [DEBUG REGISTER] Pasaporte inválido:', cedula);
     return res.render('register', {
       success: null,
       error:
         'El número de pasaporte debe tener entre 5 y 20 caracteres alfanuméricos.',
     });
   }
+  console.log('✅ [DEBUG REGISTER] Documento válido');
 
   try {
     // Verificar si ya existe el correo
+    console.log('🔍 [DEBUG REGISTER] Verificando si correo ya existe...');
     const existingUser = await client.query(
       'SELECT * FROM usuarios WHERE correo = $1',
       [correo]
     );
+
     if (existingUser.rows.length > 0) {
+      console.log('❌ [DEBUG REGISTER] Correo ya registrado:', correo);
       return res.render('register', {
         success: null,
         error: 'El correo ya está registrado.',
       });
     }
+    console.log('✅ [DEBUG REGISTER] Correo disponible');
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    console.log('🔍 [DEBUG REGISTER] Generando hash de contraseña...');
+    const passwordHash = await bcrypt.hash(password, 12); // Incrementar rounds para más seguridad
+    console.log('✅ [DEBUG REGISTER] Hash generado exitosamente');
 
     const cedulaDB = tipo_id === 'nacional' ? cedula : null;
     const pasaporteDB = tipo_id === 'extranjero' ? cedula : null;
 
-    await client.query(
+    console.log('🔍 [DEBUG REGISTER] Insertando usuario en BD...');
+    console.log('🔍 [DEBUG REGISTER] Parámetros de inserción:', {
+      nombre,
+      correo,
+      tipo_id,
+      cedulaDB,
+      pasaporteDB,
+      fecha_nacimiento,
+    });
+
+    const insertResult = await client.query(
       `INSERT INTO usuarios (nombre, correo, password, tipo_id, cedula, pasaporte, fecha_nacimiento)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
       [
         nombre,
         correo,
@@ -1070,12 +1172,18 @@ app.post('/register', async (req, res) => {
       ]
     );
 
+    console.log(
+      '✅ [DEBUG REGISTER] Usuario insertado exitosamente con ID:',
+      insertResult.rows[0].id
+    );
+
     res.render('register', {
       success: 'Cuenta creada con éxito. Ahora puedes iniciar sesión.',
       error: null,
     });
   } catch (error) {
-    console.error('Error al registrar usuario:', error);
+    console.error('❌ [DEBUG REGISTER] Error al registrar usuario:', error);
+    console.error('❌ [DEBUG REGISTER] Error stack:', error.stack);
     res.render('register', {
       success: null,
       error: 'Error del servidor. Intenta nuevamente.',
@@ -1088,48 +1196,116 @@ app.get('/login', (req, res) => {
 });
 
 app.post('/login', async (req, res) => {
+  console.log('🔍 [DEBUG LOGIN] Iniciando proceso de login');
+  console.log('🔍 [DEBUG LOGIN] Datos recibidos:', {
+    correo: req.body.correo,
+    passwordLength: req.body.password ? req.body.password.length : 0,
+  });
+
   const { correo, password } = req.body;
+
+  // Validación básica
+  if (!correo || !password) {
+    console.log('❌ [DEBUG LOGIN] Faltan datos: correo o password');
+    return res.render('login', {
+      error: 'Por favor, ingresa correo y contraseña',
+    });
+  }
+
   try {
+    console.log('🔍 [DEBUG LOGIN] Buscando usuario en BD...');
     const result = await client.query(
       'SELECT * FROM usuarios WHERE correo = $1',
       [correo]
     );
 
+    console.log('🔍 [DEBUG LOGIN] Resultado de búsqueda:', {
+      userFound: result.rows.length > 0,
+      userCount: result.rows.length,
+    });
+
     if (result.rows.length === 0) {
+      console.log('❌ [DEBUG LOGIN] Usuario no encontrado:', correo);
       return res.render('login', {
         error: 'Correo electrónico o contraseña incorrectos',
       });
     }
 
     const user = result.rows[0];
+    console.log('✅ [DEBUG LOGIN] Usuario encontrado:', {
+      id: user.id,
+      nombre: user.nombre,
+      correo: user.correo,
+      bloqueado: user.bloqueado,
+    });
 
     // Verificar si el usuario está bloqueado
     if (user.bloqueado) {
+      console.log('❌ [DEBUG LOGIN] Usuario bloqueado:', user.correo);
       return res.render('login', {
         error: 'Cuenta bloqueada, contáctese con el administrador.',
       });
     }
 
+    console.log('🔍 [DEBUG LOGIN] Verificando contraseña...');
     const isValid = await bcrypt.compare(password, user.password);
+    console.log(
+      '🔍 [DEBUG LOGIN] Resultado de verificación de contraseña:',
+      isValid
+    );
 
     if (!isValid) {
+      console.log('❌ [DEBUG LOGIN] Contraseña incorrecta para:', correo);
       return res.render('login', {
         error: 'Correo electrónico o contraseña incorrectos',
       });
     }
 
-    req.session.user = {
-      id: user.id,
-      nombre: user.nombre,
-      correo: user.correo,
-      tipo_id: user.tipo_id,
-      cedula: user.cedula,
-      pasaporte: user.pasaporte,
-    };
+    console.log('✅ [DEBUG LOGIN] Contraseña válida, iniciando sesión...');
 
-    res.redirect('/obtener-citas');
+    // Regenerar la sesión para prevenir fijación de sesión
+    req.session.regenerate((err) => {
+      if (err) {
+        console.error('❌ [DEBUG LOGIN] Error regenerando sesión:', err);
+        return res.render('login', {
+          error: 'Error del servidor. Intenta nuevamente.',
+        });
+      }
+
+      console.log('✅ [DEBUG LOGIN] Sesión regenerada exitosamente');
+
+      req.session.user = {
+        id: user.id,
+        nombre: user.nombre,
+        correo: user.correo,
+        tipo_id: user.tipo_id,
+        cedula: user.cedula,
+        pasaporte: user.pasaporte,
+      };
+
+      console.log('🔍 [DEBUG LOGIN] Datos guardados en sesión:', {
+        sessionId: req.session.id,
+        userId: req.session.user.id,
+        userName: req.session.user.nombre,
+      });
+
+      // Guardar la sesión antes de redirigir
+      req.session.save((err) => {
+        if (err) {
+          console.error('❌ [DEBUG LOGIN] Error guardando sesión:', err);
+          return res.render('login', {
+            error: 'Error del servidor. Intenta nuevamente.',
+          });
+        }
+        console.log('✅ [DEBUG LOGIN] Sesión guardada exitosamente');
+        console.log('✅ [DEBUG LOGIN] Login exitoso para:', user.correo);
+        console.log('🔍 [DEBUG LOGIN] Redirigiendo a /obtener-citas...');
+        res.redirect('/obtener-citas');
+      });
+    });
   } catch (error) {
-    console.error('Error al iniciar sesión:', error);
+    console.error('❌ [DEBUG LOGIN] Error al iniciar sesión:', error);
+    console.error('❌ [DEBUG LOGIN] Error stack:', error.stack);
     res.render('login', {
       error:
         'Ocurrió un error al iniciar sesión. Por favor, inténtalo de nuevo.',
@@ -1137,7 +1313,30 @@ app.post('/login', async (req, res) => {
   }
 });
 
-app.get('/PaPrincipal', async (req, res) => {
+// Ruta para cerrar sesión
+app.get('/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('Error al cerrar sesión:', err);
+      return res.redirect('/obtener-citas');
+    }
+    res.clearCookie('sessionId'); // Limpiar la cookie de sesión
+    res.redirect('/login');
+  });
+});
+
+app.post('/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('Error al cerrar sesión:', err);
+      return res.redirect('/obtener-citas');
+    }
+    res.clearCookie('sessionId'); // Limpiar la cookie de sesión
+    res.redirect('/login');
+  });
+});
+
+app.get('/PaPrincipal', requireAuth, async (req, res) => {
   if (!req.session.user) {
     return res.redirect('/login');
   }

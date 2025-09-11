@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node api.js && node server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon server.js",
-    "build": "echo 'Build completed successfully'",
+    "dev": "node api.js && nodemon server.js",
+    "build": "node api.js && echo 'Build completed successfully'",
     "serve": "node server.js",
     "postinstall": "echo 'Installation completed successfully'"
   },
@@ -16,10 +16,12 @@
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "body-parser": "^2.2.0",
+    "connect-pg-simple": "^10.0.0",
+    "connect-session-sequelize": "^8.0.2",
     "cors": "^2.8.5",
     "ejs": "^3.1.10",
     "express": "^5.1.0",
-    "express-session": "^1.18.1",
+    "express-session": "^1.18.2",
     "fullcalendar": "^6.1.17",
     "jquery": "^3.7.1",
     "moment": "^2.30.1",
